@@ -2618,19 +2618,116 @@
       }
       function turnover() {
         S.news = [];
-        for (const k in RO) {
-          const all = new Set(Object.values(RO[k]).flat()),
-            p = k === "f3" ? 0.45 : k === "f2" ? 0.3 : 0.2;
+        const sm = SE && SE.sim,
+          pk = sm ? ["f4", "f3", "f2", "f1", "fe"].find((k) => !sm[k]) : null,
+          RK = {},
+          lab = (k) => SERIES[k].n.replace("Fórmula ", "F"),
+          tcar = (k, t) => (SERIES[k].teams.find((x) => x[0] === t) || [0, 50])[1],
+          rn = (k, n) => (RK[k] && RK[k].r[n]) || 0,
+          rq = (k, n) => {
+            const r = rn(k, n);
+            return r ? (r - 1) / Math.max(1, RK[k].N - 1) : 0.5;
+          },
+          pos = (k, n) => {
+            const r = rn(k, n);
+            return r === 1 ? "campeón" : r ? "P" + r : "";
+          };
+        /* Clasificación final de cada categoría (la propia y las simuladas) */
+        if (sm)
+          for (const k in RO) {
+            let D = null;
+            if (k === pk && SE.D) D = SE.D.map((d) => [d.name, d.pts, d.w || 0]);
+            else if (sm[k] && sm[k].snap.length) {
+              const sn = sm[k].snap[sm[k].snap.length - 1];
+              D = sm[k].D.map((d, i) => [d.name, sn[0][i], sn[1][i]]);
+            }
+            if (!D) continue;
+            D.sort((a, b) => b[1] - a[1] || b[2] - a[2]);
+            RK[k] = { N: D.length, r: {} };
+            D.forEach((d, i) => (RK[k].r[d[0]] = i + 1));
+          }
+        const LOW = { f1: "f2", f2: "f3", f3: "f4" },
+          moved = new Set();
+        /* De arriba hacia abajo: así el ascenso deja plazas libres en la categoría inferior */
+        for (const k of ["f1", "fe", "f2", "f3", "f4"]) {
+          if (!RO[k]) continue;
+          const pb = k === "f3" ? 0.45 : k === "f2" ? 0.3 : 0.2,
+            TM = SERIES[k].teams,
+            mean = TM.reduce((a, t) => a + t[1], 0) / TM.length,
+            all = new Set(Object.values(RO[k]).flat().filter(Boolean)),
+            going = new Set(),
+            V = [],
+            low = LOW[k];
+          /* 1) Quién se va: depende de la edad y del resultado en el campeonato */
           for (const t in RO[k])
-            RO[k][t] = RO[k][t].map((n) => {
+            RO[k][t].forEach((n, j) => {
+              if (n === null) {
+                V.push({ t, j, old: null });
+                return;
+              }
               const ag = ageOf(n, k),
-                rt = Math.random() < retP(k, ag);
-              if (!rt && Math.random() >= p) return n;
-              const vt = S.vet[k].filter(
-                  (x) => !all.has(x) && retP(k, ageOf(x, k)) < 0.3,
-                ),
+                r = rn(k, n),
+                q = rq(k, n),
+                rt = Math.random() < retP(k, ag) * (r === 1 ? 0.4 : 1),
+                lv = rt || (r !== 1 && Math.random() < pb * (0.15 + 1.7 * q));
+              if (lv) {
+                going.add(n);
+                V.push({ t, j, old: n, rt, ag, r, ps: pos(k, n) });
+              }
+            });
+          /* 2) Las plazas de los mejores equipos se cubren primero */
+          while (V.length) {
+            V.sort((a, b) => tcar(k, b.t) - tcar(k, a.t));
+            const v = V.shift(),
+              tc = tcar(k, v.t);
+            let m = null,
+              head = "";
+            /* a) Ascenso desde la categoría inferior (campeón y top 3) */
+            if (low && RK[low]) {
+              const c = [];
+              for (const t2 in RO[low])
+                RO[low][t2].forEach((x, j2) => {
+                  const r = x ? rn(low, x) : 0;
+                  if (r && r <= 3 && !moved.has(x)) c.push([x, t2, j2, r]);
+                });
+              c.sort((a, b) => a[3] - b[3]);
+              for (const [x, t2, j2, r] of c) {
+                const p = (r === 1 ? 0.3 : r === 2 ? 0.15 : 0.06) * (tc >= mean ? 1 : 0.5);
+                if (Math.random() < p) {
+                  RO[low][t2][j2] = null;
+                  moved.add(x);
+                  m = x;
+                  head = `${x} (${pos(low, x)} de ${lab(low)}) sube a ${lab(k)} y ficha por ${v.t}.`;
+                  break;
+                }
+              }
+            }
+            /* b) Un piloto con buena temporada en un equipo menor pasa a uno mejor */
+            if (!m) {
+              const c = [];
+              for (const t2 in RO[k])
+                if (t2 !== v.t && tcar(k, t2) < tc - 2)
+                  RO[k][t2].forEach((x, j2) => {
+                    if (x && !going.has(x) && !moved.has(x) && rn(k, x) && rq(k, x) <= 0.4)
+                      c.push([x, t2, j2]);
+                  });
+              c.sort((a, b) => rn(k, a[0]) - rn(k, b[0]));
+              for (const [x, t2, j2] of c) {
+                if (Math.random() < 0.6 - rq(k, x)) {
+                  RO[k][t2][j2] = null;
+                  V.push({ t: t2, j: j2, old: null });
+                  moved.add(x);
+                  m = x;
+                  head = `${x} (${pos(k, x)}) deja ${t2} y ficha por ${v.t}.`;
+                  break;
+                }
+              }
+            }
+            /* c) Piloto libre, regreso o debutante */
+            if (!m) {
+              const vt = S.vet[k].filter((x) => !all.has(x) && retP(k, ageOf(x, k)) < 0.3),
                 u = Math.random();
-              let m, tag;
+              let tag;
               if (u < 0.35 && vt.length) {
                 m = vt[R(0, vt.length - 1)];
                 tag = "vuelve a";
@@ -2638,27 +2735,30 @@
                 const pl = POOL[k][u < 0.7 ? 0 : 1].filter(
                   (x) => !all.has(x) && retP(k, ageOf(x, k, 1)) < 0.3,
                 );
-                m = pl.length
-                  ? pl[R(0, pl.length - 1)]
-                  : k === "f4"
-                    ? nmF4()
-                    : nm();
+                m = pl.length ? pl[R(0, pl.length - 1)] : k === "f4" ? nmF4() : nm();
                 tag = pl.length && u >= 0.7 ? "regresa a" : "debuta en";
               }
-              all.add(m);
               ageOf(m, k, tag !== "vuelve a" ? 2 : 0);
-              if (!S.vet[k].includes(n)) S.vet[k].push(n);
-              S.news.push([
-                k,
-                `${m} ${tag} ${t} y deja su lugar a ${n}.`.replace(
-                  / y deja su lugar a (.*)\./,
-                  (a, b) =>
-                    `. ${b}${rt ? (k === "f1" || k === "fe" ? " se retira (" + ag + " años)." : " sale de la categoría (" + ag + " años).") : " deja el equipo."}`,
-                ),
-              ]);
-              return m;
-            });
+              head = `${m} ${tag} ${v.t}.`;
+            }
+            all.add(m);
+            RO[k][v.t][v.j] = m;
+            let tail = "";
+            if (v.old) {
+              if (!S.vet[k].includes(v.old)) S.vet[k].push(v.old);
+              tail = v.rt
+                ? ` ${v.old} se retira (${v.ag} años${v.r === 1 ? ", campeón" : ""}).`.replace(
+                    "se retira",
+                    k === "f1" || k === "fe" ? "se retira" : "sale de la categoría",
+                  )
+                : ` ${v.old} deja el equipo${v.ps ? " (" + v.ps + ")" : ""}.`;
+            }
+            S.news.push([k, head + tail]);
+          }
         }
+        for (const k in RO)
+          for (const t in RO[k])
+            RO[k][t] = RO[k][t].map((n) => n || (k === "f4" ? nmF4() : nm()));
       }
       const newsBlk = () => {
         const n = S.news.filter((x) => x[0] === S.series).slice(0, 4);
@@ -2895,8 +2995,7 @@
           () => {
             S.boost += 2;
             SE.rk = (SE.rk || 0) + 1;
-          },
-        ],
+          },        ],
         [
           "Fiabilidad",
           "Menos fallas mecánicas.",
@@ -2995,7 +3094,8 @@
               v: 1,
               t: "Ganar al menos una carrera",
               r: Math.round(22 * m),
-            },          ]
+            },
+          ]
             .concat(XSP(X, m, n))
             .sort(() => Math.random() - 0.5)
             .slice(0, 4 + (S.ag === 2 ? 1 : 0));
@@ -3894,8 +3994,7 @@
               { car: -2, cons: -2 },
               "La pieza funciona.",
               "La pieza trae problemas.",
-            ],
-            [
+            ],            [
               "Seguir con la anterior",
               0.7,
               { cons: 2 },
@@ -3994,7 +4093,8 @@
               { rep: -1 },
               "Terminás sólido.",
               "Pasás desapercibido.",
-            ],            [
+            ],
+            [
               "Hablar con ellos",
               0.4,
               { rep: 4, cash: 5 },
@@ -4893,8 +4993,7 @@
           ],
         },
         {
-          s: "f3",
-          t: "Tres autos, un solo equipo",
+          s: "f3",          t: "Tres autos, un solo equipo",
           d: "En F3 compartís los datos con dos compañeros.",
           c: [
             [
@@ -4993,7 +5092,8 @@
           d: "En F2 la sprint largás según la clasificación invertida.",
           c: [
             [
-              "Atacar desde atrás",              0.45,
+              "Atacar desde atrás",
+              0.45,
               { r: 6 },
               { r: -5 },
               "Remontás varios puestos.",
@@ -5892,8 +5992,7 @@
           `<h2>Campeonatos</h2><div class="lad" style="margin-top:10px">${tabs}</div>${logo(k, 30)}<p class="mu">${st.n ? `Tras ${st.n} de ${st.N} rondas.` : "Todavía no se corrió ninguna ronda."}${me ? "" : " Temporada simulada: no corrés en esta categoría."}</p>
 <h3>Pilotos</h3><div class="tw"><table><tr><th>Pos</th><th>Piloto</th><th>Equipo</th><th>Pts</th></tr>${dr}</table></div>
 <h3>Constructores</h3><div class="tw"><table><tr><th>Pos</th><th>Equipo</th><th>Pts</th></tr>${tr}</table></div>
-${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th>Piloto</th><th>Constructor</th></tr>${hh}</table></div>` : ""}
-<button class="go" onclick="back()">Volver</button>`;
+${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th>Piloto</th><th>Constructor</th></tr>${hh}</table></div>` : ""}<button class="go" onclick="back()">Volver</button>`;
         window.scrollTo(0, 0);
       }
       function back() {
@@ -5991,8 +6090,10 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         LGX = (h) => h;
       /* ===== NOVEDADES (changelog): para agregar una versión, sumá un objeto ARRIBA de CHANGELOG ===== */
       const CHANGELOG = [
+{v:"1.18",d:"19/11/2026",es:["Corregido: F1 Academy ahora se guarda. Hay autoguardado al inicio de cada ronda y podés guardar a mano en los 3 espacios, además de exportar e importar la partida."],pt:["Corrigido: a F1 Academy agora é salva. Há salvamento automático no início de cada rodada e você pode salvar manualmente nos 3 espaços, além de exportar e importar o jogo."],en:["Fixed: F1 Academy now saves. There is an autosave at the start of every round and you can save manually in the 3 slots, as well as export and import your game."]},
 {v:"1.17",d:"19/11/2026",es:["Nuevo modo: F1 Academy, el campeonato monomarca femenino. Está en la pantalla de inicio, debajo de la Fórmula E.","Parrilla y calendario 2026 reales: 6 equipos (PREMA, Campos, MP, Rodin, ART y Hitech), 17 pilotos y tu asiento libre en Hitech, con 7 rondas (Shanghai, Jeddah, Montreal, Silverstone, Zandvoort, Austin y Las Vegas).","Reglamento de la categoría: edad de 16 a 25 años, máximo de 2 temporadas (con una excepción muy rara), fines de semana de 2 carreras (Parrilla Invertida y Principal) o 3 en Montreal y Austin (con Opening Race), pole y vuelta rápida, y los puntos de superlicencia para las 5 mejores.","Juegos interactivos: vuelta de clasificación por sectores, luces de salida con reacción y decisiones de equipo en cada ronda. También hay pretemporada, test privados y la elección de tu origen y tu respaldo.","Ascensos muy limitados: F4 es posible, F3 muy poco probable, F2 casi imposible y F1 casi casi imposible. La campeona recibe financiamiento y, si asciende, continúa su carrera en el juego normal."],pt:["Novo modo: F1 Academy, o campeonato monomarca feminino. Está na tela inicial, abaixo da Fórmula E.","Grid e calendário 2026 reais: 6 equipes (PREMA, Campos, MP, Rodin, ART e Hitech), 17 pilotos e a sua vaga livre na Hitech, com 7 etapas (Xangai, Jidá, Montreal, Silverstone, Zandvoort, Austin e Las Vegas).","Regulamento da categoria: idade de 16 a 25 anos, máximo de 2 temporadas (com uma exceção muito rara), fins de semana de 2 corridas (Grid Invertido e Principal) ou 3 em Montreal e Austin (com Opening Race), pole e volta mais rápida, e pontos de superlicença para as 5 melhores.","Jogos interativos: volta de classificação por setores, luzes de largada com reação e decisões de equipe em cada etapa. Também há pré-temporada, testes privados e a escolha da sua origem e do seu apoio.","Ascensos muito limitados: F4 é possível, F3 muito improvável, F2 quase impossível e F1 quase quase impossível. A campeã recebe financiamento e, se subir, continua a carreira no jogo normal."],en:["New mode: F1 Academy, the all-female single-make championship. It sits on the home screen, below Formula E.","Real 2026 grid and calendar: 6 teams (PREMA, Campos, MP, Rodin, ART and Hitech), 17 drivers and your open seat at Hitech, over 7 rounds (Shanghai, Jeddah, Montreal, Silverstone, Zandvoort, Austin and Las Vegas).","Series rules: ages 16 to 25, a maximum of 2 seasons (with one very rare exception), 2-race weekends (Reverse Grid and Feature) or 3 at Montreal and Austin (with an Opening Race), pole and fastest lap points, and Super Licence points for the top 5.","Interactive games: a sector-by-sector qualifying lap, a reaction-based race start and team decisions every round. Also pre-season training, private tests, and choosing your background and backing.","Very limited promotion: F4 is possible, F3 very unlikely, F2 almost impossible and F1 almost almost impossible. The champion gets funding and, if promoted, continues in the regular game."]},
-{v:"1.16",d:"18/11/2026",es:["Nueva opción al retirarte: fundar tu propio equipo. Diseñás el nombre y el logo (forma, patrón, elemento, texto y colores) con vista previa en vivo.","Elegís la categoría donde compite y, en F4, cuál de los 9 campeonatos. También elegís con qué estructura y presupuesto arrancás.","Multicategoría: podés abrir hasta 3 equipos de tu escudería en categorías distintas y gestionarlos en paralelo. Cada uno tiene su auto, pilotos y desarrollo; el dinero, la reputación y la academia son compartidos.","Se gestiona igual que el modo dueño de equipo, con todas sus opciones."],pt:["Nova opção ao se aposentar: fundar sua própria equipe. Você desenha o nome e o logo (forma, padrão, elemento, texto e cores) com prévia ao vivo.","Escolhe a categoria em que compete e, na F4, qual dos 9 campeonatos. Também escolhe a estrutura e o orçamento iniciais.","Multicategoria: você pode abrir até 3 equipes da sua escuderia em categorias diferentes e geri-las em paralelo. Cada uma tem seu carro, pilotos e desenvolvimento; dinheiro, reputação e academia são compartilhados.","Funciona como o modo dono de equipe, com todas as suas opções."],en:["New option when you retire: found your own team. Design the name and logo (shape, pattern, element, text and colours) with a live preview.","Choose the category it competes in and, in F4, which of the 9 championships. You also pick your starting structure and budget.","Multi-category: open up to 3 teams of your organisation in different categories and manage them in parallel. Each has its own car, drivers and development; money, reputation and the academy are shared.","It is managed like team owner mode, with all its options."]},{v:"1.15",d:"18/11/2026",es:["Modo dueño de equipo mucho más completo: academia de pilotos con promesas que podés entrenar, subir a titular o vender (y rivales que intentan robártelas), y una filial en una categoría baja.","Finanzas con préstamos con intereses, inversores que compran parte del equipo y tope de costos con multas.","Proveedor de motor (cliente o fábrica propia), mercado de ingenieros con personalidad, marca y fans con mercadería y eventos VIP.","Crisis y votaciones de reglamento, metas a varias temporadas con recompensa, y un nuevo escenario de inicio: heredar un equipo en quiebra.","Cinco Grandes Premios por temporada con clasificación previa, campeonato de pilotos aparte y un salón de la fama de dueños."],pt:["Modo dono de equipe muito mais completo: academia de pilotos com promessas que você pode treinar, promover a titular ou vender (e rivais que tentam roubá-las), e uma filial em uma categoria de base.","Finanças com empréstimos com juros, investidores que compram parte da equipe e teto de custos com multas.","Fornecedor de motor (cliente ou fábrica própria), mercado de engenheiros com personalidade, marca e fãs com produtos e eventos VIP.","Crises e votações de regulamento, metas de várias temporadas com recompensa e um novo cenário inicial: herdar uma equipe falida.","Cinco Grandes Prêmios por temporada com classificação, campeonato de pilotos separado e um hall da fama de donos."],en:["Much more complete team owner mode: a driver academy with prospects you can train, promote or sell (and rivals trying to poach them), plus a feeder team in a lower category.","Finances with interest-bearing loans, investors who buy part of the team, and a cost cap with fines.","Engine supplier (customer or own factory), an engineer market with personalities, and brand and fans with merchandise and VIP events.","Crises and regulation votes, multi-season goals with rewards, and a new starting scenario: inherit a bankrupt team.","Five Grands Prix per season with qualifying, a separate drivers' championship and an owners' hall of fame."]},
+{v:"1.16",d:"18/11/2026",es:["Nueva opción al retirarte: fundar tu propio equipo. Diseñás el nombre y el logo (forma, patrón, elemento, texto y colores) con vista previa en vivo.","Elegís la categoría donde compite y, en F4, cuál de los 9 campeonatos. También elegís con qué estructura y presupuesto arrancás.","Multicategoría: podés abrir hasta 3 equipos de tu escudería en categorías distintas y gestionarlos en paralelo. Cada uno tiene su auto, pilotos y desarrollo; el dinero, la reputación y la academia son compartidos.","Se gestiona igual que el modo dueño de equipo, con todas sus opciones."],pt:["Nova opção ao se aposentar: fundar sua própria equipe. Você desenha o nome e o logo (forma, padrão, elemento, texto e cores) com prévia ao vivo.","Escolhe a categoria em que compete e, na F4, qual dos 9 campeonatos. Também escolhe a estrutura e o orçamento iniciais.","Multicategoria: você pode abrir até 3 equipes da sua escuderia em categorias diferentes e geri-las em paralelo. Cada uma tem seu carro, pilotos e desenvolvimento; dinheiro, reputação e academia são compartilhados.","Funciona como o modo dono de equipe, com todas as suas opções."],en:["New option when you retire: found your own team. Design the name and logo (shape, pattern, element, text and colours) with a live preview.","Choose the category it competes in and, in F4, which of the 9 championships. You also pick your starting structure and budget.","Multi-category: open up to 3 teams of your organisation in different categories and manage them in parallel. Each has its own car, drivers and development; money, reputation and the academy are shared.","It is managed like team owner mode, with all its options."]},
+{v:"1.15",d:"18/11/2026",es:["Modo dueño de equipo mucho más completo: academia de pilotos con promesas que podés entrenar, subir a titular o vender (y rivales que intentan robártelas), y una filial en una categoría baja.","Finanzas con préstamos con intereses, inversores que compran parte del equipo y tope de costos con multas.","Proveedor de motor (cliente o fábrica propia), mercado de ingenieros con personalidad, marca y fans con mercadería y eventos VIP.","Crisis y votaciones de reglamento, metas a varias temporadas con recompensa, y un nuevo escenario de inicio: heredar un equipo en quiebra.","Cinco Grandes Premios por temporada con clasificación previa, campeonato de pilotos aparte y un salón de la fama de dueños."],pt:["Modo dono de equipe muito mais completo: academia de pilotos com promessas que você pode treinar, promover a titular ou vender (e rivais que tentam roubá-las), e uma filial em uma categoria de base.","Finanças com empréstimos com juros, investidores que compram parte da equipe e teto de custos com multas.","Fornecedor de motor (cliente ou fábrica própria), mercado de engenheiros com personalidade, marca e fãs com produtos e eventos VIP.","Crises e votações de regulamento, metas de várias temporadas com recompensa e um novo cenário inicial: herdar uma equipe falida.","Cinco Grandes Prêmios por temporada com classificação, campeonato de pilotos separado e um hall da fama de donos."],en:["Much more complete team owner mode: a driver academy with prospects you can train, promote or sell (and rivals trying to poach them), plus a feeder team in a lower category.","Finances with interest-bearing loans, investors who buy part of the team, and a cost cap with fines.","Engine supplier (customer or own factory), an engineer market with personalities, and brand and fans with merchandise and VIP events.","Crises and regulation votes, multi-season goals with rewards, and a new starting scenario: inherit a bankrupt team.","Five Grands Prix per season with qualifying, a separate drivers' championship and an owners' hall of fame."]},
 {v:"1.14",d:"17/11/2026",es:["Gestión de equipo mucho más profunda: nuevo plan técnico donde repartís puntos de desarrollo entre aerodinámica, unidad de potencia, chasis y fiabilidad (con riesgo de que alguna mejora no funcione).","Tres Grandes Premios por temporada para jugar: cada circuito premia áreas distintas y vos elegís neumáticos, modo de motor y reglaje, y resolvés una decisión en plena carrera (safety car, lluvia, fallas del motor, órdenes de equipo).","El rendimiento en esos Grandes Premios influye en la clasificación final de constructores. Aplica a dueño y director de equipo."],pt:["Gestão de equipe muito mais profunda: novo plano técnico para distribuir pontos de desenvolvimento entre aerodinâmica, unidade de potência, chassi e confiabilidade (com risco de alguma melhoria não funcionar).","Três Grandes Prêmios por temporada para jogar: cada circuito premia áreas diferentes e você escolhe pneus, modo do motor e acerto, e resolve uma decisão em plena corrida (safety car, chuva, falhas do motor, ordens de equipe).","O desempenho nesses Grandes Prêmios influencia a classificação final de construtores. Vale para dono e diretor de equipe."],en:["Much deeper team management: a new technical plan where you spread development points across aerodynamics, power unit, chassis and reliability (with a risk that some upgrades don't work).","Three playable Grands Prix per season: each circuit rewards different areas, you choose tyres, engine mode and setup, and make a call mid-race (safety car, rain, engine trouble, team orders).","Your performance in those races affects the final constructors' standings. Applies to team owner and team principal."]},
 {v:"1.13",d:"17/11/2026",es:["Corregido el contrato firmado: se veía oscuro, con el texto centrado, los títulos cortados en líneas sueltas y las firmas casi invisibles. Ahora se muestra como una hoja de papel con texto legible y el sello de FIRMADO."],pt:["Corrigido o contrato assinado: aparecia escuro, com o texto centralizado, os títulos quebrados em linhas soltas e as assinaturas quase invisíveis. Agora é exibido como uma folha de papel com texto legível e o carimbo de ASSINADO."],en:["Fixed the signed contract: it appeared dark, with centered text, headings broken onto separate lines and almost invisible signatures. It now shows as a sheet of paper with readable text and the SIGNED stamp."]},
 {v:"1.12",d:"17/11/2026",es:["Nuevo contrato de piloto con diseño de documento: cláusulas numeradas (duración, remuneración, bonificación por podio y por victoria, prima de firma y cláusula de salida), firmas del piloto y del equipo, y sello de FIRMADO al aceptar."],pt:["Novo contrato de piloto com visual de documento: cláusulas numeradas (duração, remuneração, bônus por pódio e por vitória, prêmio de assinatura e cláusula de saída), assinaturas do piloto e da equipe e carimbo de ASSINADO ao aceitar."],en:["New driver contract styled as a document: numbered clauses (duration, pay, podium and win bonuses, signing bonus and exit clause), signatures from the driver and the team, and a SIGNED stamp once accepted."]},
@@ -6890,8 +6991,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         hacer: "make",
         tomá: "take",
         Tomá: "Take",
-        asumí: "accept",
-        construí: "build",
+        asumí: "accept",        construí: "build",
         construir: "build",
         corré: "race",
         Corré: "Race",
@@ -6991,7 +7091,8 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
           .join("|"),
         "gi",
       );
-      enTx = (s) => {        let x = s;
+      enTx = (s) => {
+        let x = s;
         const t = s.trim();
         if (t && END[t] !== undefined) x = s.replace(t, END[t]);
         x = x.replace(
@@ -7721,12 +7822,13 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
             return null;
           }
         },
-        svOK = () => S && CK && CKOK;
+        svOK = () => (CK === "fa" ? !!FA && CKOK : S && CK && CKOK);
       const svLabel = () =>
         MG && MG.on
           ? `${S.name} · ${MG.lbl}${MG.team ? " · " + MG.team : ""} · ${MG.age} años`
           : `${S.name} · ${SERIES[S.series].n} · ${S.team} · ${S.age} años`;
       function svWrite(i) {
+        if (CK === "fa" && FA) return faSvWrite(i);
         if (!S || !CK) return false;
         try {
           localStorage.setItem(
@@ -7766,6 +7868,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         const v = svRead(i);
         if (!v) return;
         const d = v.d;
+        if (d.CK === "fa") return faSvLoad(d);
         S = d.S;
         SE = d.SE;
         RO = d.RO;
@@ -7887,8 +7990,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
           d: "La FIA cambia un reglamento y obliga a rediseñar piezas.",
           c: [
             [
-              "Rediseñar todo",
-              0.55,
+              "Rediseñar todo",              0.55,
               { car: 5, m: -1 },
               { car: -2, m: -1 },
               "Aciertan con la solución.",
@@ -7990,7 +8092,8 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
               { m: -0.3 },
               { rep: -4, m: -1 },
               "Nadie se entera.",
-              "Se filtra y es un escándalo.",            ],
+              "Se filtra y es un escándalo.",
+            ],
             [
               "Ignorarlo",
               0.3,
@@ -8886,8 +8989,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
       function faGradScreen() {
         const p = FA.p = faProb();
         faW(`<h2>Tu futuro</h2><p>Terminaste tu etapa en F1 Academy (${FA.hist.length} temporada${FA.hist.length > 1 ? "s" : ""}, mejor posición P${Math.min(...FA.hist.map((h) => h.r))}). Estas son tus chances reales de seguir ascendiendo:</p><ul><li>Fórmula 4: ${p.f4.toFixed(1)}%</li><li>Fórmula 3: ${p.f3.toFixed(2)}%</li><li>Fórmula 2: ${p.f2.toFixed(3)}%</li><li>Fórmula 1: ${p.f1.toFixed(3)}%</li></ul><p class="mu">Fondos: €${FA.cash} M. Podés pagar pruebas privadas para mejorar un poco tus chances.</p><button class="cb" ${FA.cash < 1 || FA.b4 ? "disabled style='opacity:.45'" : ""} onclick="FA.cash--;FA.b4=1.5;faGradScreen()"><b>Test privado con un equipo de F4 (€1 M)</b><br><span class="mu">Multiplica por 1,5 tus chances de F4.</span></button><button class="cb" ${FA.cash < 1 || FA.b3 ? "disabled style='opacity:.45'" : ""} onclick="FA.cash--;FA.b3=1.5;faGradScreen()"><b>Mostrarte ante equipos de F3 (€1 M)</b><br><span class="mu">Multiplica por 1,5 tus chances de F3.</span></button><button class="go" onclick="faRoll()">Ver mi destino</button>`);
-      }
-      function faRoll() {
+      }      function faRoll() {
         const p = FA.p || faProb(); let k = null;
         for (const c of ["f1", "f2", "f3", "f4"]) if (Math.random() * 100 < p[c]) { k = c; break; }
         if (!k) return faW(`<h2>Fin del camino</h2><p>Ningún equipo de categorías superiores te ofrece un asiento. Tu historia en F1 Academy termina acá, pero ya demostraste de qué estás hecha.</p><p class="mu">${FA.name} · ${FA.hist.map((h) => "Temp. " + h.s + ": P" + h.r + " (" + h.pts + " pts)").join(" · ")} · Superlicencia: ${FA.sl} pts</p><button class="go" onclick="intro()">Volver al inicio</button>`);
@@ -8989,7 +9091,8 @@ function intro() {
           pods: 0,
           dnf: 0,
           season: 1,
-          year: 2027,          titles: { f4: 0, f1: 0, f2: 0, f3: 0, fe: 0 },
+          year: 2027,
+          titles: { f4: 0, f1: 0, f2: 0, f3: 0, fe: 0 },
           hist: [],
           seen: [],
           mode: MODE,
@@ -9805,7 +9908,7 @@ ${role ? `<div class="pn"><b>Después de las pistas</b><br>${EPI(role, T, sc)}</
         if (!t) return;
         try {
           const o = JSON.parse(t);
-          if (!o.d || !o.d.S) throw 0;
+          if (!o.d || !(o.d.S || o.d.FA)) throw 0;
           localStorage.setItem(SK(i), t);
           slots("Partida importada en el espacio " + i + ".");
         } catch (e) {
@@ -9885,8 +9988,7 @@ ${role ? `<div class="pn"><b>Después de las pistas</b><br>${EPI(role, T, sc)}</
             "Estorba y el jefe se molesta.",
           ],
           [
-            "Seguir de largo",
-            0.9,
+            "Seguir de largo",            0.9,
             {},
             { rep: -3 },
             "Nadie lo nota.",
@@ -9988,7 +10090,8 @@ ${role ? `<div class="pn"><b>Después de las pistas</b><br>${EPI(role, T, sc)}</
       E(
         "El simulador falló",
         "El simulador se cae la noche antes de la clasificación.",
-        [          [
+        [
+          [
             "Entrenar en la pista a pie",
             0.7,
             { craft: 2, q: 3 },
@@ -10884,8 +10987,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
               "Sin pérdidas grandes.",
               "El repuesto no rinde.",
             ],
-          ],
-        ),
+          ],        ),
         M2(
           "Se ofrece un ex campeón",
           "Un campeón retirado quiere asesorar al equipo.",
@@ -10987,7 +11089,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
               0.6,
               { aud: 5 },
               { cred: -3 },
-              "La gente lo ama.",              "Parece poco serio.",
+              "La gente lo ama.",
+              "Parece poco serio.",
             ],
             [
               "Hacerlo técnico",
@@ -11883,8 +11986,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
       Q(
         "fe",
         "Recarga ultrarrápida",
-        "Un equipo tiene una idea para recargar en boxes.",
-        [
+        "Un equipo tiene una idea para recargar en boxes.",        [
           [
             "Probarla",
             0.55,
@@ -11986,7 +12088,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
               0.85,
               { cons: 2 },
               { rep: -1 },
-              "Se olvida solo.",              "Crece el enojo.",
+              "Se olvida solo.",
+              "Crece el enojo.",
             ],
             [
               "Mostrar tu trabajo",
@@ -12882,8 +12985,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
             ? ok.sort((a, b) => lv[a] - lv[b])[0]
             : lv.indexOf(Math.max(...lv)),
           l1 = lv[c],
-          l2 = lv[c2];
-        return {
+          l2 = lv[c2];        return {
           p,
           c,
           c2,
@@ -12985,7 +13087,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
 
 
       /* ===== Decisiones procedurales: miles de combinaciones, opciones y riesgos que cambian cada vez ===== */
-      {        const gRI = (a) => a[R(0, a.length - 1)],
+      {
+        const gRI = (a) => a[R(0, a.length - 1)],
           gSH = (a) => a.map((x) => [Math.random(), x]).sort((x, y) => x[0] - y[0]).map((x) => x[1]),
           gCP = (x) => x[0].toUpperCase() + x.slice(1),
           gFX = { f4: 0.5, f3: 0.8, f2: 1.2, f1: 2, fe: 1.5 },
@@ -13691,6 +13794,42 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
           )
         )
           intro();
+      }
+      /* ===== Guardado de F1 Academy (autoguardado al inicio de cada ronda y guardado manual) ===== */
+      function faSvWrite(i) {
+        try {
+          const f = Object.assign({}, FA);
+          ["raf", "tm", "q", "cur", "g1", "g2"].forEach((k) => delete f[k]);
+          localStorage.setItem(
+            SK(i),
+            JSON.stringify({
+              t: Date.now(),
+              l: `${FA.name} · F1 Academy · Hitech · ${FA.age} años · Temporada ${FA.season}`,
+              d: { CK: "fa", FA: f, nat: S && S.nat },
+            }),
+          );
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      function faSvLoad(d) {
+        faClr();
+        FA = d.FA;
+        CK = "fa";
+        if (!S) S = {};
+        if (d.nat) S.nat = d.nat;
+        faRound();
+      }
+      {
+        const _fr = faRound;
+        faRound = function () {
+          CK = "fa";
+          faSvWrite(0);
+          const r = _fr.apply(this, arguments);
+          CKOK = true;
+          return r;
+        };
       }
       intro();
     
