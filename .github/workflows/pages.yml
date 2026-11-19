@@ -37,3 +37,4 @@ jobs:
         uses: actions/deploy-pages@v4
 
       # GitHub Pages: deployment is triggered automatically on pushes to main.
+      # Static HTML site; no build step is required.
