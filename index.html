@@ -13981,23 +13981,30 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
       const ln = (R1[top[0]] || []).filter(Boolean);
       if (ln.length) add(k, "prev", `${top[0]}, el equipo a seguir en ${lab(k)}`, `Con ${ln.slice(0, 2).join(" y ")} al volante, ${top[0]} llega como referencia de la parrilla de ${lab(k)}.`, 0.5);
     });
-    out.forEach((s) => { const e = EXTRA[s.kind]; s.x = e ? pick(e) : ""; });
+    out.forEach((s) => { const e = EXTRA[s.kind]; s.x = e ? pick(e) : ""; if (fits(s).length) s.s += 12; });
     return out.sort((a, b) => b.s - a.s);
   }
 
-  /* Imágenes: se detectan solas en img/revista/ (1.jpg, 2.jpg… y f1-1.jpg, fe-1.jpg, f2-1.jpg, f3-1.jpg, f4-1.jpg para categorías) */
-  const IMG = {};
-  ["", "f1", "fe", "f2", "f3", "f4"].forEach((p) => {
-    const out = []; let i = 1;
-    const next = () => { if (i > 40) return; const u = "img/revista/" + (p ? p + "-" : "") + i + ".jpg", im = new Image(); im.onload = () => { out.push(u); i++; next(); }; im.src = u; };
-    IMG[p || "gen"] = out; next();
-  });
+  /* Imágenes de img/revista/: cada una declara en qué categorías (k), tipos de noticia (kinds) y, si aplica, de qué equipo puede salir */
+  const ALLK = ["champ", "xfer", "up", "deb", "back", "prev", "renew", "ret"], SCN = ["prev", "up", "deb", "back", "renew", "xfer"];
+  const MI = [
+    { u: "img/revista/1.jpg", k: ["f4"], kinds: ALLK, c: "Fórmula 4 en acción" },
+    { u: "img/revista/2.jpg", k: ["f1"], kinds: ALLK, team: "Mercedes", pos: "50% 60%", c: "Mercedes en pista" },
+    { u: "img/revista/3.jpg", k: ["f1", "f2", "f3"], kinds: SCN, c: "Imola, vista desde el aire" },
+    { u: "img/revista/4.jpg", k: ["f1", "fe", "f2"], kinds: SCN, c: "Las tribunas de Montecarlo" },
+    { u: "img/revista/5.jpg", k: ["f1"], kinds: ["champ"], fit: 1, c: "El trofeo del campeonato de pilotos" },
+    { u: "img/revista/6.jpg", k: ["f1"], kinds: ["champ"], fit: 1, c: "El trofeo del campeonato de constructores" },
+  ];
+  const txt = (s) => s.h + " " + s.b;
+  const fits = (s) => MI.filter((m) => m.k.includes(s.k) && m.kinds.includes(s.kind) && (!m.team || txt(s).includes(m.team)));
   let USED = new Set();
-  const pickImg = (k) => {
-    for (const pl of [IMG[k] || [], IMG.gen, ...Object.values(IMG)]) { const f = pl.filter((u) => !USED.has(u)); if (f.length) { const u = pick(f); USED.add(u); return u; } }
-    const all = Object.values(IMG).flat(); return all.length ? pick(all) : "";
+  const img = (s, on) => {
+    if (!on) return "";
+    const c = fits(s).filter((m) => !USED.has(m.u)), tm = c.filter((m) => m.team), pl = tm.length ? tm : c;
+    if (!pl.length) return "";
+    const m = pick(pl); USED.add(m.u);
+    return `<figure class="mgfg"><img class="mgi${m.fit ? " ct" : ""}" src="${m.u}" alt="${esc(m.c)}" loading="lazy" ${m.pos ? `style="object-position:${m.pos}"` : ""} onerror="this.parentNode.remove()"><figcaption>${esc(m.c)}</figcaption></figure>`;
   };
-  const img = (s, on) => { const u = on ? pickImg(s.k) : ""; return u ? `<img class="mgi" src="${u}" alt="" loading="lazy" onerror="this.remove()">` : ""; };
   const tag = (s) => `<div class="mgt" style="--c:${col(s.k)}"><span>${TAG[s.kind]}</span> ${esc(lab(s.k))}</div>`;
   const art = (s, cls, im) => `<article class="mgs ${cls || ""}" data-k="${s.k}">${img(s, cls === "cv" || im)}${tag(s)}<h3>${esc(s.h)}</h3><p>${esc(s.b)}${cls === "cv" ? " " + esc(s.x) : ""}</p></article>`;
 
@@ -14030,7 +14037,8 @@ ${tick.length ? `<div class="mgk"><b>Última hora</b>${tick.map((s) => `<span da
 .mgf{display:flex;gap:6px;overflow-x:auto;margin:6px 0 12px;scrollbar-width:none}.mgf::-webkit-scrollbar{display:none}
 .mgc{flex:none;border:1px solid #14141a;background:transparent;color:#14141a;border-radius:99px;padding:5px 12px;font:700 11px Inter,Arial,sans-serif;cursor:pointer}
 .mgt{font:700 10px Inter,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#14141a;margin-bottom:4px;display:flex;gap:8px;align-items:center}.mgt span{background:var(--c);color:#fff;padding:2px 7px;border-radius:2px;text-shadow:0 1px 2px #0008}
-.mgi{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;margin:0 0 8px;border-radius:2px;background:#d9d2c3}.mgs.cv .mgi{aspect-ratio:21/9;max-height:320px;margin-bottom:10px}
+.mgfg{margin:0 0 8px}.mgfg figcaption{font:italic 11px Georgia,serif;color:#6b665a;margin-top:3px}.mgi.ct{object-fit:contain;background:#0e0e12}
+.mgi{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;margin:0 0 8px;border-radius:2px;background:#d9d2c3}.mgs.cv .mgi{aspect-ratio:21/9;max-height:320px}.mgs.cv .mgfg{margin-bottom:10px}
 .mgs h3{font:800 20px/1.12 Formula1,"Barlow Condensed",Impact,sans-serif;margin:2px 0 6px;color:#14141a;text-transform:none}
 .mgs p{font-size:14.5px;line-height:1.5;margin:0;color:#2a2a30}
 .mgs.cv{border-bottom:3px double #14141a;padding-bottom:14px;margin-bottom:14px}
