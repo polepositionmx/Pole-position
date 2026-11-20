@@ -13985,11 +13985,24 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
     return out.sort((a, b) => b.s - a.s);
   }
 
+  /* Imágenes: se detectan solas en img/revista/ (1.jpg, 2.jpg… y f1-1.jpg, fe-1.jpg, f2-1.jpg, f3-1.jpg, f4-1.jpg para categorías) */
+  const IMG = {};
+  ["", "f1", "fe", "f2", "f3", "f4"].forEach((p) => {
+    const out = []; let i = 1;
+    const next = () => { if (i > 40) return; const u = "img/revista/" + (p ? p + "-" : "") + i + ".jpg", im = new Image(); im.onload = () => { out.push(u); i++; next(); }; im.src = u; };
+    IMG[p || "gen"] = out; next();
+  });
+  let USED = new Set();
+  const pickImg = (k) => {
+    for (const pl of [IMG[k] || [], IMG.gen, ...Object.values(IMG)]) { const f = pl.filter((u) => !USED.has(u)); if (f.length) { const u = pick(f); USED.add(u); return u; } }
+    const all = Object.values(IMG).flat(); return all.length ? pick(all) : "";
+  };
+  const img = (s, on) => { const u = on ? pickImg(s.k) : ""; return u ? `<img class="mgi" src="${u}" alt="" loading="lazy" onerror="this.remove()">` : ""; };
   const tag = (s) => `<div class="mgt" style="--c:${col(s.k)}"><span>${TAG[s.kind]}</span> ${esc(lab(s.k))}</div>`;
-  const art = (s, cls) => `<article class="mgs ${cls || ""}" data-k="${s.k}">${tag(s)}<h3>${esc(s.h)}</h3><p>${esc(s.b)}${cls === "cv" ? " " + esc(s.x) : ""}</p></article>`;
+  const art = (s, cls, im) => `<article class="mgs ${cls || ""}" data-k="${s.k}">${img(s, cls === "cv" || im)}${tag(s)}<h3>${esc(s.h)}</h3><p>${esc(s.b)}${cls === "cv" ? " " + esc(s.x) : ""}</p></article>`;
 
   function html() {
-    const L = stories(); if (!L.length) return "";
+    const L = stories(); if (!L.length) return ""; USED = new Set();
     const cv = L[0], sec = L.slice(1, 3), grid = L.slice(3, 12), tick = L.slice(12, 20);
     const cham = (S.cham || []).slice(-1)[0];
     const strip = cham ? ORD.filter((k) => cham[k] && SERIES[k]).map((k) => `<div style="--c:${col(k)}"><small>Campeón ${esc(lab(k))}</small><b>${esc(cham[k].d)}</b></div>`).join("") : "";
@@ -13999,8 +14012,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
 ${strip ? `<div class="mgcs">${strip}</div>` : ""}
 <div class="mgf">${chips}</div>
 ${art(cv, "cv")}
-<div class="mgg2">${sec.map((s) => art(s)).join("")}</div>
-${grid.length ? `<div class="mgg3">${grid.map((s) => art(s)).join("")}</div>` : ""}
+<div class="mgg2">${sec.map((s) => art(s, "", 1)).join("")}</div>
+${grid.length ? `<div class="mgg3">${grid.map((s, i) => art(s, "", i < 3)).join("")}</div>` : ""}
 ${tick.length ? `<div class="mgk"><b>Última hora</b>${tick.map((s) => `<span data-k="${s.k}">${esc(s.h)}</span>`).join("")}</div>` : ""}
 <button class="go" onclick="__mgGo()" style="margin-top:16px">Empezar la temporada →</button></div>`;
   }
@@ -14017,12 +14030,13 @@ ${tick.length ? `<div class="mgk"><b>Última hora</b>${tick.map((s) => `<span da
 .mgf{display:flex;gap:6px;overflow-x:auto;margin:6px 0 12px;scrollbar-width:none}.mgf::-webkit-scrollbar{display:none}
 .mgc{flex:none;border:1px solid #14141a;background:transparent;color:#14141a;border-radius:99px;padding:5px 12px;font:700 11px Inter,Arial,sans-serif;cursor:pointer}
 .mgt{font:700 10px Inter,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#14141a;margin-bottom:4px;display:flex;gap:8px;align-items:center}.mgt span{background:var(--c);color:#fff;padding:2px 7px;border-radius:2px;text-shadow:0 1px 2px #0008}
+.mgi{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;margin:0 0 8px;border-radius:2px;background:#d9d2c3}.mgs.cv .mgi{aspect-ratio:21/9;max-height:320px;margin-bottom:10px}
 .mgs h3{font:800 20px/1.12 Formula1,"Barlow Condensed",Impact,sans-serif;margin:2px 0 6px;color:#14141a;text-transform:none}
 .mgs p{font-size:14.5px;line-height:1.5;margin:0;color:#2a2a30}
 .mgs.cv{border-bottom:3px double #14141a;padding-bottom:14px;margin-bottom:14px}
 .mgs.cv h3{font-size:clamp(28px,6.5vw,46px);line-height:1.02}
 .mgs.cv p{font-size:16px;column-gap:24px}@media(min-width:700px){.mgs.cv p{column-count:2}}
-.mgs.cv p:first-letter{float:left;font:800 54px/.85 Formula1,Impact,sans-serif;padding:4px 8px 0 0;color:#e10600}
+.mgs.cv p:first-line{font-variant:small-caps;letter-spacing:.05em;font-weight:700}
 .mgg2,.mgg3{display:grid;gap:16px;margin-bottom:14px}.mgg2{grid-template-columns:1fr}.mgg3{grid-template-columns:1fr}
 @media(min-width:700px){.mgg2{grid-template-columns:1fr 1fr}.mgg3{grid-template-columns:repeat(3,1fr)}.mgg2 .mgs+.mgs{border-left:1px solid #bdb6a6;padding-left:16px}}
 .mgg2 .mgs,.mgg3 .mgs{border-top:3px solid var(--c,#14141a);padding-top:8px}
