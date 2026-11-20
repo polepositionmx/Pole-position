@@ -1508,7 +1508,7 @@
 .lad a{cursor:pointer}.lad a:hover{opacity:1}.lad a.on{opacity:1;border-color:var(--c)}
 .lad a img{height:18px;width:auto;display:block;transform:skewX(14deg)}
 .pvb{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px}
-.pvb>div{background:#15151e;border:1px solid #e10600;border-radius:14px;max-width:460px;width:100%;padding:22px;color:#fff}
+.pvb>div{max-height:92vh;overflow-y:auto;background:#15151e;border:1px solid #e10600;border-radius:14px;max-width:460px;width:100%;padding:22px;color:#fff}
 .pvb p{line-height:1.5}.pvr{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 </style><style>
 .mn .hl{display:flex;align-items:center;height:100%;padding:0 16px;color:#e6e6ee;text-decoration:none;font:600 16px Formula1,sans-serif;white-space:nowrap}
@@ -6099,6 +6099,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         LGX = (h) => h;
       /* ===== NOVEDADES (changelog): para agregar una versión, sumá un objeto ARRIBA de CHANGELOG ===== */
       const CHANGELOG = [
+{v:"1.19",d:"20/11/2026",es:["Nuevo: cuentas en la nube. Creá tu cuenta con correo o con Google desde el botón «Cuenta» de la barra superior.","Tus partidas (autoguardado y los 3 espacios), el salón de la fama y los trofeos se guardan en la nube, así que podés seguir tu carrera desde otro dispositivo.","Estadísticas de tu cuenta: puntos totales, victorias, podios, poles, títulos y temporadas de todas tus carreras.","Nuevo ranking global con los pilotos que más puntos acumulan.","Nueva revista de noticias antes de cada temporada: campeonatos, fichajes, ascensos, renovaciones, retiros y debutantes de todas las categorías, con las más importantes en portada y filtros por categoría.","Encabezado rediseñado: tu avatar, un indicador de sincronización con la nube y accesos con íconos.","Política de privacidad actualizada con los datos de la cuenta. Podés eliminar tu cuenta y tus datos en la nube desde tu perfil."],pt:["Novo: contas na nuvem. Crie sua conta com e-mail ou com o Google no botão «Conta» da barra superior.","Seus jogos (salvamento automático e os 3 espaços), o hall da fama e os troféus ficam salvos na nuvem, então você pode continuar sua carreira em outro dispositivo.","Estatísticas da sua conta: pontos totais, vitórias, pódios, poles, títulos e temporadas de todas as suas carreiras.","Novo ranking global com os pilotos que mais acumulam pontos.","Nova revista de notícias antes de cada temporada: campeonatos, contratações, promoções, renovações, aposentadorias e estreantes de todas as categorias, com as mais importantes na capa e filtros por categoria.","Cabeçalho redesenhado: seu avatar, um indicador de sincronização com a nuvem e atalhos com ícones.","Política de privacidade atualizada com os dados da conta. Você pode excluir sua conta e seus dados na nuvem pelo seu perfil."],en:["New: cloud accounts. Create your account with email or Google from the «Account» button in the top bar.","Your games (autosave and the 3 slots), hall of fame and trophies are saved in the cloud, so you can continue your career on another device.","Account stats: total points, wins, podiums, poles, titles and seasons across all your careers.","New global leaderboard with the pilots who have earned the most points.","New news magazine before every season: championships, signings, promotions, renewals, retirements and debutants from every category, with the biggest stories on the cover and category filters.","Redesigned header: your avatar, a cloud sync indicator and icon shortcuts.","Privacy policy updated with account data. You can delete your account and your cloud data from your profile."]},
 {v:"1.18",d:"19/11/2026",es:["Corregido: F1 Academy ahora se guarda. Hay autoguardado al inicio de cada ronda y podés guardar a mano en los 3 espacios, además de exportar e importar la partida.","Corregido: el botón «Cerrar el fin de semana» de F1 Academy ya funciona.","Corregido: en F1 Academy los puntos se reinician al empezar la segunda temporada.","Corregido: en F1 Academy se muestra la bandera de tu nacionalidad en las tablas."],pt:["Corrigido: a F1 Academy agora é salva. Há salvamento automático no início de cada rodada e você pode salvar manualmente nos 3 espaços, além de exportar e importar o jogo.","Corrigido: o botão «Encerrar o fim de semana» da F1 Academy agora funciona.","Corrigido: na F1 Academy os pontos são zerados no início da segunda temporada.","Corrigido: na F1 Academy a bandeira da sua nacionalidade aparece nas tabelas."],en:["Fixed: F1 Academy now saves. There is an autosave at the start of every round and you can save manually in the 3 slots, as well as export and import your game.","Fixed: the \"Close the weekend\" button in F1 Academy now works.","Fixed: in F1 Academy the points reset when the second season starts.","Fixed: in F1 Academy your nationality flag shows in the tables."]},
 {v:"1.17",d:"19/11/2026",es:["Nuevo modo: F1 Academy, el campeonato monomarca femenino. Está en la pantalla de inicio, debajo de la Fórmula E.","Parrilla y calendario 2026 reales: 6 equipos (PREMA, Campos, MP, Rodin, ART y Hitech), 17 pilotos y tu asiento libre en Hitech, con 7 rondas (Shanghai, Jeddah, Montreal, Silverstone, Zandvoort, Austin y Las Vegas).","Reglamento de la categoría: edad de 16 a 25 años, máximo de 2 temporadas (con una excepción muy rara), fines de semana de 2 carreras (Parrilla Invertida y Principal) o 3 en Montreal y Austin (con Opening Race), pole y vuelta rápida, y los puntos de superlicencia para las 5 mejores.","Juegos interactivos: vuelta de clasificación por sectores, luces de salida con reacción y decisiones de equipo en cada ronda. También hay pretemporada, test privados y la elección de tu origen y tu respaldo.","Ascensos muy limitados: F4 es posible, F3 muy poco probable, F2 casi imposible y F1 casi casi imposible. La campeona recibe financiamiento y, si asciende, continúa su carrera en el juego normal."],pt:["Novo modo: F1 Academy, o campeonato monomarca feminino. Está na tela inicial, abaixo da Fórmula E.","Grid e calendário 2026 reais: 6 equipes (PREMA, Campos, MP, Rodin, ART e Hitech), 17 pilotos e a sua vaga livre na Hitech, com 7 etapas (Xangai, Jidá, Montreal, Silverstone, Zandvoort, Austin e Las Vegas).","Regulamento da categoria: idade de 16 a 25 anos, máximo de 2 temporadas (com uma exceção muito rara), fins de semana de 2 corridas (Grid Invertido e Principal) ou 3 em Montreal e Austin (com Opening Race), pole e volta mais rápida, e pontos de superlicença para as 5 melhores.","Jogos interativos: volta de classificação por setores, luzes de largada com reação e decisões de equipe em cada etapa. Também há pré-temporada, testes privados e a escolha da sua origem e do seu apoio.","Ascensos muito limitados: F4 é possível, F3 muito improvável, F2 quase impossível e F1 quase quase impossível. A campeã recebe financiamento e, se subir, continua a carreira no jogo normal."],en:["New mode: F1 Academy, the all-female single-make championship. It sits on the home screen, below Formula E.","Real 2026 grid and calendar: 6 teams (PREMA, Campos, MP, Rodin, ART and Hitech), 17 drivers and your open seat at Hitech, over 7 rounds (Shanghai, Jeddah, Montreal, Silverstone, Zandvoort, Austin and Las Vegas).","Series rules: ages 16 to 25, a maximum of 2 seasons (with one very rare exception), 2-race weekends (Reverse Grid and Feature) or 3 at Montreal and Austin (with an Opening Race), pole and fastest lap points, and Super Licence points for the top 5.","Interactive games: a sector-by-sector qualifying lap, a reaction-based race start and team decisions every round. Also pre-season training, private tests, and choosing your background and backing.","Very limited promotion: F4 is possible, F3 very unlikely, F2 almost impossible and F1 almost almost impossible. The champion gets funding and, if promoted, continues in the regular game."]},
 {v:"1.16",d:"18/11/2026",es:["Nueva opción al retirarte: fundar tu propio equipo. Diseñás el nombre y el logo (forma, patrón, elemento, texto y colores) con vista previa en vivo.","Elegís la categoría donde compite y, en F4, cuál de los 9 campeonatos. También elegís con qué estructura y presupuesto arrancás.","Multicategoría: podés abrir hasta 3 equipos de tu escudería en categorías distintas y gestionarlos en paralelo. Cada uno tiene su auto, pilotos y desarrollo; el dinero, la reputación y la academia son compartidos.","Se gestiona igual que el modo dueño de equipo, con todas sus opciones."],pt:["Nova opção ao se aposentar: fundar sua própria equipe. Você desenha o nome e o logo (forma, padrão, elemento, texto e cores) com prévia ao vivo.","Escolhe a categoria em que compete e, na F4, qual dos 9 campeonatos. Também escolhe a estrutura e o orçamento iniciais.","Multicategoria: você pode abrir até 3 equipes da sua escuderia em categorias diferentes e geri-las em paralelo. Cada uma tem seu carro, pilotos e desenvolvimento; dinheiro, reputação e academia são compartilhados.","Funciona como o modo dono de equipe, com todas as suas opções."],en:["New option when you retire: found your own team. Design the name and logo (shape, pattern, element, text and colours) with a live preview.","Choose the category it competes in and, in F4, which of the 9 championships. You also pick your starting structure and budget.","Multi-category: open up to 3 teams of your organisation in different categories and manage them in parallel. Each has its own car, drivers and development; money, reputation and the academy are shared.","It is managed like team owner mode, with all its options."]},
@@ -13851,7 +13852,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
       intro();
     
       (function () {
-        const K = "pp_priv", sI = Storage.prototype.setItem, T = (a, p, e) => (LANG === "pt" ? p : LANG === "en" ? e : a);
+        const K = "pp_priv2", sI = Storage.prototype.setItem, T = (a, p, e) => (LANG === "pt" ? p : LANG === "en" ? e : a);
         let NO = false, v = null;
         try { v = localStorage.getItem(K); } catch (e) {}
         Storage.prototype.setItem = function (k, x) { if (NO && k !== K) return; return sI.call(this, k, x); };
@@ -13859,7 +13860,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
           if (document.querySelector(".pvb")) return;
           const d = document.createElement("div");
           d.className = "pvb"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true");
-          d.innerHTML = `<div><h2 style="margin-top:0">${T("Política de privacidad", "Política de privacidade", "Privacy policy")}</h2><p>${T("Pole Position guarda tu partida, tu idioma y tus preferencias únicamente en tu navegador (almacenamiento local). No te pedimos datos personales: lo que escribís, como el nombre de tu piloto, queda guardado en tu dispositivo.", "Pole Position salva seu jogo, seu idioma e suas preferências somente no seu navegador (armazenamento local). Não pedimos dados pessoais: o que você escreve, como o nome do seu piloto, fica salvo no seu dispositivo.", "Pole Position stores your game, language and preferences only in your browser (local storage). We don't ask for personal data: what you type, like your driver name, stays on your device.")}</p><p class="mu">${T("Si no aceptás, podés jugar igual, pero no se guardará nada.", "Se você não aceitar, ainda pode jogar, mas nada será salvo.", "If you don't accept, you can still play, but nothing will be saved.")}</p><p>${T("¿Aceptás la política de privacidad?", "Você aceita a política de privacidade?", "Do you accept the privacy policy?")}</p><div class="pvr"><button class="go" id="pva">${T("Acepto", "Aceito", "I accept")}</button><button class="lk" id="pvn">${T("No acepto", "Não aceito", "I decline")}</button></div></div>`;
+          d.innerHTML = `<div><h2 style="margin-top:0">${T("Política de privacidad", "Política de privacidade", "Privacy policy")}</h2><p>${T("Podés jugar sin cuenta: en ese caso Pole Position guarda tu partida, tu idioma y tus preferencias únicamente en tu navegador (almacenamiento local) y no te pedimos datos personales.", "Você pode jogar sem conta: nesse caso o Pole Position salva seu jogo, seu idioma e suas preferências somente no seu navegador (armazenamento local) e não pedimos dados pessoais.", "You can play without an account: in that case Pole Position stores your game, language and preferences only in your browser (local storage) and we don't ask for personal data.")}</p><p>${T("Si creás una cuenta (con correo o con Google) guardamos en la nube, en Google Firebase con servidores en Estados Unidos: tu correo, el nombre de piloto que elijas, tu foto de perfil si entrás con Google, un identificador de usuario y los datos del juego (partidas guardadas, trofeos, salón de la fama y estadísticas como puntos, victorias, podios, poles, títulos y temporadas). Los usamos para sincronizar tu progreso entre dispositivos.", "Se você criar uma conta (com e-mail ou Google) salvamos na nuvem, no Google Firebase com servidores nos Estados Unidos: seu e-mail, o nome de piloto que escolher, sua foto de perfil se entrar com o Google, um identificador de usuário e os dados do jogo (jogos salvos, troféus, hall da fama e estatísticas como pontos, vitórias, pódios, poles, títulos e temporadas). Usamos isso para sincronizar seu progresso entre dispositivos.", "If you create an account (with email or Google) we store in the cloud, on Google Firebase with servers in the United States: your email, the driver name you choose, your profile photo if you sign in with Google, a user ID and your game data (saved games, trophies, hall of fame and stats such as points, wins, podiums, poles, titles and seasons). We use it to sync your progress across devices.")}</p><p>${T("Ranking público: tu nombre de piloto y tus estadísticas totales aparecen en el ranking global y los demás jugadores pueden verlos. Tu correo y tus partidas no son públicos. Si no querés que se vea tu nombre real, elegí otro nombre de piloto.", "Ranking público: seu nome de piloto e suas estatísticas totais aparecem no ranking global e outros jogadores podem vê-los. Seu e-mail e seus jogos não são públicos. Se não quiser que seu nome real apareça, escolha outro nome de piloto.", "Public ranking: your driver name and total stats appear on the global leaderboard and other players can see them. Your email and your saved games are not public. If you don't want your real name shown, pick a different driver name.")}</p><p>${T("No vendemos tus datos ni mostramos publicidad. Solo los usamos para que el juego funcione y solo los procesan los servicios que lo hacen posible (Google Firebase). El sitio se aloja en GitHub Pages, que puede registrar datos técnicos de conexión, como la dirección IP.", "Não vendemos seus dados nem exibimos publicidade. Só os usamos para o jogo funcionar e só são processados pelos serviços que o tornam possível (Google Firebase). O site está hospedado no GitHub Pages, que pode registrar dados técnicos de conexão, como o endereço IP.", "We don't sell your data or show ads. We only use it to make the game work, and it is only processed by the services that make it possible (Google Firebase). The site is hosted on GitHub Pages, which may log technical connection data such as your IP address.")}</p><p>${T("Podés eliminar tu cuenta y todos tus datos en la nube cuando quieras desde tu perfil (botón «Cuenta»). Las partidas guardadas en tu dispositivo siguen ahí hasta que borres los datos del navegador.", "Você pode excluir sua conta e todos os seus dados na nuvem quando quiser pelo seu perfil (botão «Conta»). Os jogos salvos no seu dispositivo continuam lá até você apagar os dados do navegador.", "You can delete your account and all your cloud data at any time from your profile («Account» button). Games saved on your device stay there until you clear your browser data.")}</p><p class="mu">${T("Si no aceptás, podés jugar igual, pero no se guardará nada y no podrás crear una cuenta.", "Se você não aceitar, ainda pode jogar, mas nada será salvo e você não poderá criar uma conta.", "If you don't accept, you can still play, but nothing will be saved and you won't be able to create an account.")}</p><p>${T("¿Aceptás la política de privacidad?", "Você aceita a política de privacidade?", "Do you accept the privacy policy?")}</p><div class="pvr"><button class="go" id="pva">${T("Acepto", "Aceito", "I accept")}</button><button class="lk" id="pvn">${T("No acepto", "Não aceito", "I decline")}</button></div></div>`;
           document.body.appendChild(d);
           d.querySelector("#pva").onclick = () => { NO = false; try { sI.call(localStorage, K, "yes"); } catch (e) {} d.remove(); };
           d.querySelector("#pvn").onclick = () => { NO = true; d.remove(); };
@@ -13908,6 +13909,147 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
       })();
 </script>
   <script>
+/* ===== Revista: noticias del paddock antes de cada temporada ===== */
+(function () {
+  const CW = { f1: 100, fe: 75, f2: 60, f3: 50, f4: 40 }, ORD = ["f1", "fe", "f2", "f3", "f4"];
+  const TAG = { champ: "Campeonato", xfer: "Fichaje", up: "Ascenso", ret: "Retiro", renew: "Renovación", prev: "Previa", back: "Regreso", deb: "Debut" };
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const lab = (k) => (SERIES[k] ? SERIES[k].n : k);
+  const col = (k) => (SERIES[k] ? SERIES[k].col : "#e10600");
+  const EXTRA = {
+    champ: ["En el paddock ya se habla de la defensa del título y de quién podrá arrebatárselo el próximo año.", "La temporada que viene promete: los rivales llegan con ganas de revancha."],
+    xfer: ["Los directores de equipo confían en que el cambio rinda frutos desde las primeras carreras.", "El movimiento sacude el mercado y deja a más de un equipo mirando con atención."],
+    up: ["Subir de categoría es el sueño de todo piloto joven, pero el nivel exigirá adaptarse rápido.", "Los ojos del paddock estarán puestos en cómo se desenvuelve en su nueva casa."],
+    ret: ["El paddock despide a una figura que deja huella en la categoría.", "Su asiento ya tiene reemplazo, y la parrilla cambia de cara."],
+    renew: ["El equipo apuesta por la continuidad y por una alineación que ya conoce el auto.", "Las dos partes se muestran satisfechas y miran con optimismo el próximo campeonato."],
+    prev: ["Será el equipo a batir según los pronósticos, aunque la pista siempre tiene la última palabra.", "Los rivales, por su parte, prometen dar pelea desde la primera ronda."],
+    back: ["Su experiencia puede ser una pieza clave en una parrilla cada vez más joven."],
+    deb: ["Llega sin presión, pero con ganas de dar la sorpresa desde el primer fin de semana."],
+  };
+
+  function stories() {
+    const out = [], R0 = typeof RO !== "undefined" && RO ? RO : {};
+    const add = (k, kind, h, b, s) => out.push({ k, kind, h, b, s: (CW[k] || 40) * (s || 1) + Math.random() * 5 });
+    const where = (n) => { for (const k in R0) for (const t in R0[k]) if (R0[k][t].includes(n)) return [k, t]; return null; };
+    const cham = (S.cham || []).slice(-1)[0];
+    /* Campeones de la temporada anterior */
+    if (cham) ORD.forEach((k) => {
+      const c = cham[k]; if (!c || !SERIES[k]) return;
+      const me = c.d === S.name, w = me ? null : where(c.d);
+      const tail = me ? " El paddock ya especula con su próximo paso."
+        : w ? (w[0] === k && w[1] ? ` El campeón correrá la próxima temporada con ${w[1]}.` : ` Su próximo destino: ${lab(w[0])}, con ${w[1]}.`)
+        : " No volverá a la categoría el próximo año.";
+      add(k, "champ", me ? `${c.d} se corona campeón de ${lab(k)}` : pick([`${c.d}, campeón de ${lab(k)}`, `${c.d} se queda con el título en ${lab(k)}`, `Reinado de ${c.d} en ${lab(k)}`]),
+        `${c.d} se llevó el campeonato de pilotos de ${lab(k)} y ${c.t} festejó el de constructores.${tail}`, me ? 1.3 : 1.7);
+    });
+    /* Movimientos del mercado (generados por turnover) */
+    const seen = new Set();
+    (S.news || []).forEach(([k, text]) => {
+      if (!SERIES[k]) return;
+      let m, tail = "", x = "", team = "";
+      if ((m = text.match(/^(.+?) \((.+?) de (.+?)\) sube a (.+?) y ficha por (.+?)\.(.*)$/))) {
+        x = m[1]; team = m[5]; tail = m[6]; seen.add(x);
+        const how = m[2] === "campeón" ? `como campeón de ${m[3]}` : `en la posición ${m[2].replace("P", "")} de ${m[3]}`;
+        add(k, "up", pick([`${x} da el salto a ${m[4]} con ${team}`, `${x} sube a ${m[4]}: ficha por ${team}`]), `Tras terminar ${how}, ${x} se gana un asiento en ${m[4]}. Lo recibe ${team}.`, 1.5);
+      } else if ((m = text.match(/^(.+?) \((.+?)\) deja (.+?) y ficha por (.+?)\.(.*)$/))) {
+        x = m[1]; team = m[4]; tail = m[5]; seen.add(x);
+        add(k, "xfer", pick([`${x} deja ${m[3]} y ficha por ${team}`, `Bombazo: ${x} es nuevo piloto de ${team}`]), `${x}, que cerró la temporada ${m[2] === "campeón" ? "como campeón" : "en " + m[2]}, cambia de equipo: sale de ${m[3]} y se une a ${team}.`, 1.3);
+      } else if ((m = text.match(/^(.+?) (vuelve a|regresa a|debuta en) (.+?)\.(.*)$/))) {
+        x = m[1]; team = m[3]; tail = m[4]; seen.add(x);
+        const deb = m[2] === "debuta en";
+        add(k, deb ? "deb" : "back", deb ? `${x} debuta con ${team}` : `${x} ${m[2]} ${team}`, deb ? `Nuevo nombre en la parrilla: ${x} llega a ${lab(k)} de la mano de ${team}.` : `${x} ${m[2]} ${lab(k)} y se suma a ${team}.`, deb ? 0.7 : 0.9);
+      }
+      if ((m = tail.match(/ (.+?) (se retira|sale de la categoría) \((\d+) años(, campeón)?\)\./))) {
+        const big = k === "f1" || k === "fe", ch = !!m[4];
+        add(k, "ret", big ? `${m[1]} se retira a los ${m[3]} años` : `${m[1]} deja ${lab(k)}`, `${m[1]} (${m[3]} años${ch ? ", campeón" : ""}) pone fin a su etapa en ${lab(k)}.${x ? ` Su lugar lo ocupa ${x} en ${team}.` : ""}`, ch ? 1.9 : 1);
+      } else if ((m = tail.match(/ (.+?) deja el equipo/))) {
+        add(k, "xfer", `${m[1]} deja el equipo`, `${m[1]} no seguirá en su escudería actual. ${x ? `${x} ocupa su asiento en ${team}.` : ""}`, 0.8);
+      }
+    });
+    /* Renovaciones y previas (siempre hay material) */
+    ORD.forEach((k) => {
+      const X = SERIES[k], R1 = R0[k]; if (!X || !R1) return;
+      const T = X.teams.slice().sort((a, b) => b[1] - a[1]);
+      let n = 0;
+      for (const [tn] of T.slice(0, 4)) {
+        if (n >= 1 || (k === S.series && tn === S.team)) continue;
+        const d = (R1[tn] || []).find((z) => z && !seen.has(z) && !(cham && Object.values(cham).some((c) => c && c.d === z)));
+        if (d) { add(k, "renew", `${d} renueva con ${tn}`, `${tn} confirma la continuidad de ${d} para la próxima temporada de ${lab(k)}.`, 0.7); n++; }
+      }
+      const top = T.find(([tn]) => !(k === S.series && tn === S.team)); if (!top) return;
+      const ln = (R1[top[0]] || []).filter(Boolean);
+      if (ln.length) add(k, "prev", `${top[0]}, el equipo a seguir en ${lab(k)}`, `Con ${ln.slice(0, 2).join(" y ")} al volante, ${top[0]} llega como referencia de la parrilla de ${lab(k)}.`, 0.5);
+    });
+    out.forEach((s) => { const e = EXTRA[s.kind]; s.x = e ? pick(e) : ""; });
+    return out.sort((a, b) => b.s - a.s);
+  }
+
+  const tag = (s) => `<div class="mgt" style="--c:${col(s.k)}"><span>${TAG[s.kind]}</span> ${esc(lab(s.k))}</div>`;
+  const art = (s, cls) => `<article class="mgs ${cls || ""}" data-k="${s.k}">${tag(s)}<h3>${esc(s.h)}</h3><p>${esc(s.b)}${cls === "cv" ? " " + esc(s.x) : ""}</p></article>`;
+
+  function html() {
+    const L = stories(); if (!L.length) return "";
+    const cv = L[0], sec = L.slice(1, 3), grid = L.slice(3, 12), tick = L.slice(12, 20);
+    const cham = (S.cham || []).slice(-1)[0];
+    const strip = cham ? ORD.filter((k) => cham[k] && SERIES[k]).map((k) => `<div style="--c:${col(k)}"><small>Campeón ${esc(lab(k))}</small><b>${esc(cham[k].d)}</b></div>`).join("") : "";
+    const chips = ["all", ...ORD].map((k) => `<button class="mgc" onclick="mgF('${k}',this)" ${k === "all" ? 'style="background:#14141a;color:#f4efe6"' : ""}>${k === "all" ? "Todas" : esc(lab(k))}</button>`).join("");
+    return `<div class="mg">
+<div class="mgm"><div class="mgr"><span>Nº ${S.season || 1}</span><span>Temporada ${S.year || ""}</span><span>El magazine del paddock</span></div><h1>Pole Position</h1><div class="mgr b"><span>Noticias · Fichajes · Campeonatos</span><span>Edición de pretemporada</span></div></div>
+${strip ? `<div class="mgcs">${strip}</div>` : ""}
+<div class="mgf">${chips}</div>
+${art(cv, "cv")}
+<div class="mgg2">${sec.map((s) => art(s)).join("")}</div>
+${grid.length ? `<div class="mgg3">${grid.map((s) => art(s)).join("")}</div>` : ""}
+${tick.length ? `<div class="mgk"><b>Última hora</b>${tick.map((s) => `<span data-k="${s.k}">${esc(s.h)}</span>`).join("")}</div>` : ""}
+<button class="go" onclick="__mgGo()" style="margin-top:16px">Empezar la temporada →</button></div>`;
+  }
+
+  const st = document.createElement("style");
+  st.textContent = `.mg{background:#f4efe6;color:#14141a;border-radius:6px;padding:18px 16px 16px;box-shadow:0 8px 30px #0006;font-family:Georgia,"Times New Roman",serif}
+.mg *{box-sizing:border-box}
+.mgm{text-align:center;border-top:4px solid #14141a;border-bottom:1px solid #14141a;padding:6px 0 4px;margin-bottom:12px}
+.mgm h1{font:800 clamp(34px,9vw,64px)/1 Formula1,"Barlow Condensed",Impact,sans-serif;text-transform:uppercase;letter-spacing:.02em;margin:6px 0;color:#14141a}
+.mgr{display:flex;justify-content:space-between;gap:8px;font:600 10px Inter,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid #14141a;padding-bottom:4px}
+.mgr.b{border:0;border-top:1px solid #14141a;padding:4px 0 0}
+.mgcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-bottom:10px}
+.mgcs div{border-left:4px solid var(--c);background:#ebe5d8;padding:5px 8px}.mgcs small{display:block;font:700 9px Inter,Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#555}.mgcs b{font:700 14px Formula1,Impact,sans-serif}
+.mgf{display:flex;gap:6px;overflow-x:auto;margin:6px 0 12px;scrollbar-width:none}.mgf::-webkit-scrollbar{display:none}
+.mgc{flex:none;border:1px solid #14141a;background:transparent;color:#14141a;border-radius:99px;padding:5px 12px;font:700 11px Inter,Arial,sans-serif;cursor:pointer}
+.mgt{font:700 10px Inter,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#14141a;margin-bottom:4px;display:flex;gap:8px;align-items:center}.mgt span{background:var(--c);color:#fff;padding:2px 7px;border-radius:2px;text-shadow:0 1px 2px #0008}
+.mgs h3{font:800 20px/1.12 Formula1,"Barlow Condensed",Impact,sans-serif;margin:2px 0 6px;color:#14141a;text-transform:none}
+.mgs p{font-size:14.5px;line-height:1.5;margin:0;color:#2a2a30}
+.mgs.cv{border-bottom:3px double #14141a;padding-bottom:14px;margin-bottom:14px}
+.mgs.cv h3{font-size:clamp(28px,6.5vw,46px);line-height:1.02}
+.mgs.cv p{font-size:16px;column-gap:24px}@media(min-width:700px){.mgs.cv p{column-count:2}}
+.mgs.cv p:first-letter{float:left;font:800 54px/.85 Formula1,Impact,sans-serif;padding:4px 8px 0 0;color:#e10600}
+.mgg2,.mgg3{display:grid;gap:16px;margin-bottom:14px}.mgg2{grid-template-columns:1fr}.mgg3{grid-template-columns:1fr}
+@media(min-width:700px){.mgg2{grid-template-columns:1fr 1fr}.mgg3{grid-template-columns:repeat(3,1fr)}.mgg2 .mgs+.mgs{border-left:1px solid #bdb6a6;padding-left:16px}}
+.mgg2 .mgs,.mgg3 .mgs{border-top:3px solid var(--c,#14141a);padding-top:8px}
+.mgg3 .mgs h3{font-size:16px}.mgg3 .mgs p{font-size:13.5px}
+.mgk{display:flex;flex-wrap:wrap;gap:6px 18px;background:#14141a;color:#f4efe6;padding:8px 12px;font:600 12px Inter,Arial,sans-serif;border-radius:3px}.mgk b{color:#ff4a43;text-transform:uppercase;letter-spacing:.12em}`;
+  document.head.appendChild(st);
+
+  window.mgF = (k, b) => {
+    document.querySelectorAll(".mgc").forEach((x) => { x.style.background = "transparent"; x.style.color = "#14141a"; });
+    b.style.background = "#14141a"; b.style.color = "#f4efe6";
+    document.querySelectorAll(".mg [data-k]").forEach((e) => (e.style.display = k === "all" || e.dataset.k === k ? "" : "none"));
+  };
+  const _p = window.preseason;
+  window.preseason = function () {
+    try {
+      if (S && S.series && S._mg !== S.season && typeof RO !== "undefined") {
+        S._mg = S.season;
+        const h = html();
+        if (h) { window.__mgGo = () => _p.call(window); R_(h); return; }
+      }
+    } catch (e) { console.warn("Revista", e); }
+    return _p.apply(this, arguments);
+  };
+})();
+
+</script>
+<script>
 /* ===== Cuentas en la nube (Firebase Auth + Firestore) ===== */
 (function () {
   const FIREBASE_CONFIG = {
@@ -13919,7 +14061,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
   const V = "10.12.2", CDN = "https://www.gstatic.com/firebasejs/" + V + "/firebase-";
   const READY = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "PEGA_AQUI";
   const KEYS = ["pp_tro", "pp_hof", "pp_ownhof"];
-  let auth, db, U = null, tm = null, busy = false;
+  let auth, db, U = null, tm = null, busy = false, skipWipe = false;
   const $$ = (s) => document.querySelector(s);
   const lj = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
   const load = (src) => new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
@@ -13941,7 +14083,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
 
   /* ---- subida ---- */
   async function pushAll() {
-    if (!U || busy) return; busy = true; btn.dataset.s = "1";
+    if (!U || busy || localStorage.getItem("pp_priv2") !== "yes") return; busy = true; btn.dataset.s = "1";
     try {
       const u = db.collection("users").doc(U.uid), b = db.batch();
       for (let i = 0; i < 4; i++) {
@@ -14063,9 +14205,20 @@ ${reg ? "" : '<button class="s" id="acrs">Olvidé mi contraseña</button>'}
 <div class="g"><div><b>${s.pts || 0}</b>puntos totales</div><div><b>${s.wins || 0}</b>victorias</div><div><b>${s.pods || 0}</b>podios</div><div><b>${s.poles || 0}</b>poles</div><div><b>${s.titles || 0}</b>títulos</div><div><b>${s.seasons || 0}</b>temporadas</div></div>
 <p style="color:#999;font-size:13px">${s.careers || 0} carrera(s) registradas. Las estadísticas se actualizan al guardar y al terminar cada temporada.</p>
 <h3>🏆 Ranking global (puntos)</h3><table><tr><th>#</th><th>Piloto</th><th>Pts</th><th>Títulos</th></tr>${lb.map((x, i) => `<tr${x.id === U.uid ? ' style="color:#f5c542"' : ""}><td>${i + 1}</td><td>${esc(x.name)}</td><td>${x.pts}</td><td>${x.titles}</td></tr>`).join("")}</table>
-<button class="s" id="acname" style="margin-top:10px">Cambiar nombre de piloto</button><button class="s" id="acout">Cerrar sesión</button>`);
+<button class="s" id="acname" style="margin-top:10px">Cambiar nombre de piloto</button><button class="s" id="acout">Cerrar sesión</button><button class="s" id="acdel" style="background:#3a1517;color:#ff9a95">Eliminar mi cuenta y mis datos</button>`);
       $$("#acname").onclick = async () => { const n = prompt("Nuevo nombre:", U.displayName || ""); if (n) { await U.updateProfile({ displayName: n.slice(0, 20) }); setBtn(U); await pushAll(); profileView(); } };
       $$("#acout").onclick = async () => { await pushAll(); await auth.signOut(); };
+      $$("#acdel").onclick = async () => {
+        if (!confirm("¿Eliminar tu cuenta y todos tus datos en la nube (partidas, estadísticas y ranking)? No se puede deshacer. Las partidas de este dispositivo se conservan.")) return;
+        try {
+          skipWipe = true; busy = true;
+          const u = db.collection("users").doc(U.uid);
+          for (const c of ["saves", "careers"]) { const q = await u.collection(c).get(); await Promise.all(q.docs.map((d) => d.ref.delete())); }
+          await db.collection("leaderboard").doc(U.uid).delete();
+          await u.delete();
+          await U.delete();
+        } catch (e) { skipWipe = false; busy = false; modal("<p>" + (e.code === "auth/requires-recent-login" ? "Por seguridad, cerrá sesión, volvé a entrar y repetí la eliminación. Tus datos en la nube ya se borraron; falta eliminar la cuenta." : esc(e.message)) + "</p>"); }
+      };
     } catch (e) { modal("<p>No se pudo cargar: " + esc(e.message) + "</p>"); }
   }
 
@@ -14079,7 +14232,7 @@ ${reg ? "" : '<button class="s" id="acrs">Olvidé mi contraseña</button>'}
     if (u.photoURL) btn.querySelector(".av").style.backgroundImage = "url(" + u.photoURL + ")";
   };
   setBtn(null);
-  btn.onclick = () => { if (!READY) return modal("<h3>Cuenta no configurada</h3><p>Falta pegar la configuración de Firebase al inicio del bloque «Cuentas en la nube».</p>"); U ? profileView() : loginView(false); };
+  btn.onclick = () => { if (localStorage.getItem("pp_priv2") !== "yes") { if (window.pvShow) pvShow(); return; } if (!READY) return modal("<h3>Cuenta no configurada</h3><p>Falta pegar la configuración de Firebase al inicio del bloque «Cuentas en la nube».</p>"); U ? profileView() : loginView(false); };
   const nav = document.querySelector("header nav"); (nav || document.body).prepend(btn);
 
   if (!READY) return;
@@ -14089,7 +14242,7 @@ ${reg ? "" : '<button class="s" id="acrs">Olvidé mi contraseña</button>'}
     auth.onAuthStateChanged(async (u) => {
       const was = U; U = u; setBtn(u);
       if (u) { try { await pull(); } catch (e) { console.warn(e); } if ($$("#acm")) profileView(); if (typeof slots === "function" && /Guardar y cargar/.test($$("#app").textContent.slice(0, 40))) slots(); }
-      else if (was) { wipeLocal(); location.reload(); }
+      else if (was) { if (!skipWipe) wipeLocal(); location.reload(); }
     });
   })();
 })();
