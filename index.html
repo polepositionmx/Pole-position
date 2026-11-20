@@ -6099,6 +6099,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         LGX = (h) => h;
       /* ===== NOVEDADES (changelog): para agregar una versión, sumá un objeto ARRIBA de CHANGELOG ===== */
       const CHANGELOG = [
+{v:"1.26",d:"20/11/2026",es:["F1 Academy: corregido de verdad el nombre al ascender a Fórmula 4. Al elegir el campeonato de F4 se perdían tu nombre, edad, reputación, dinero, nacionalidad y puntos de superlicencia, y el contrato decía solo \u201cPiloto\u201d. Ahora todo se conserva."],pt:["F1 Academy: corrigido de verdade o nome ao subir para a Fórmula 4. Ao escolher o campeonato de F4 perdiam-se seu nome, idade, reputação, dinheiro, nacionalidade e pontos de superlicença, e o contrato dizia só \u201cPiloto\u201d. Agora tudo é mantido."],en:["F1 Academy: properly fixed the driver's name when moving up to Formula 4. Choosing the F4 championship used to lose your name, age, reputation, cash, nationality and Super Licence points, and the contract read just \u201cPiloto\u201d. Everything is now kept."]},
 {v:"1.25",d:"20/11/2026",es:["F1 Academy: corregido el nombre de la piloto al ascender a F4, F3, F2 o F1. Antes aparecía solo como \u201cPiloto\u201d (por ejemplo en el contrato). Ahora podés escribir tu nombre al empezar en F1 Academy y se conserva en toda tu carrera.","Las chances de ascender desde F1 Academy no cambiaron: F4 es posible, F3 es muy baja, F2 casi imposible y F1 casi casi imposible."],pt:["F1 Academy: corrigido o nome da piloto ao subir para F4, F3, F2 ou F1. Antes aparecia só como \u201cPiloto\u201d (por exemplo no contrato). Agora você pode escrever seu nome ao começar na F1 Academy e ele é mantido em toda a carreira.","As chances de ascender da F1 Academy não mudaram: F4 é possível, F3 é muito baixa, F2 quase impossível e F1 quase quase impossível."],en:["F1 Academy: fixed the driver's name when moving up to F4, F3, F2 or F1. It used to show only as \u201cPiloto\u201d (for example on the contract). You can now type your name when starting in F1 Academy and it carries through your whole career.","Promotion odds out of F1 Academy are unchanged: F4 is possible, F3 is very low, F2 almost impossible and F1 almost almost impossible."]},
 {v:"1.24",d:"20/11/2026",es:["Modo gestión (Fundador): corregido el premio de fin de temporada, que era demasiado chico y casi no se notaba. Ahora el premio de constructores crece mucho con la posición: el campeón cobra 10 veces el pago base de la categoría (€400 M en F1) y el último, 1,5 veces.","El balance de fin de temporada ahora muestra cuánto tenías antes y cuánto tenés después (Fondos: antes → después)."],pt:["Modo gestão (Fundador): corrigido o prêmio de fim de temporada, que era pequeno demais e quase não se notava. Agora o prêmio de construtores cresce muito com a posição: o campeão recebe 10 vezes o pagamento base da categoria (€400 M na F1) e o último, 1,5 vez.","O balanço de fim de temporada agora mostra quanto você tinha antes e quanto tem depois (Fundos: antes → depois)."],en:["Management mode (Founder): fixed the end-of-season prize, which was too small to notice. The constructors' prize now grows steeply with position: the champion earns 10 times the category's base pay (€400 M in F1) and last place 1.5 times.","The end-of-season balance now shows your funds before and after (Funds: before → after)."]},
 {v:"1.23",d:"20/11/2026",es:["Talentos: ahora es posible completar el árbol. Además del punto base por temporada, ganás puntos extra por tus resultados: terminar entre los 3 primeros suma +1 y ser campeón suma +3 (+2 en F4 y F3).","Balance: con una carrera dominante llegás a la Leyenda viviente en unas 13 temporadas; si terminás siempre entre los 3 primeros sin ganar, en unas 18; y si te quedás en mitad de tabla no alcanza para todo. Rápido, pero difícil.","Las carreras ya empezadas reciben retroactivamente los puntos extra por su historial de temporadas.","Al cerrar la temporada se avisa cuántos puntos de talento extra ganaste."],pt:["Talentos: agora é possível completar a árvore. Além do ponto base por temporada, você ganha pontos extras pelos resultados: terminar entre os 3 primeiros dá +1 e ser campeão dá +3 (+2 na F4 e na F3).","Balanceamento: com uma carreira dominante você chega à Lenda viva em cerca de 13 temporadas; se terminar sempre entre os 3 primeiros sem vencer, em cerca de 18; e se ficar no meio da tabela não dá para tudo. Rápido, mas difícil.","As carreiras já iniciadas recebem retroativamente os pontos extras pelo histórico de temporadas.","Ao fechar a temporada, é informado quantos pontos de talento extras você ganhou."],en:["Talents: the tree can now be completed. On top of the base point per season, you earn extra points for your results: finishing in the top 3 gives +1 and winning the title gives +3 (+2 in F4 and F3).","Balance: with a dominant career you reach Living legend in about 13 seasons; if you always finish in the top 3 without winning, in about 18; and if you stay mid-table you can't afford everything. Fast, but hard.","Careers already in progress get the extra points retroactively for their season history.","At the end of each season you are told how many extra talent points you earned."]},
@@ -9030,11 +9031,11 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
       }
       function faGo2(k) {
         window.__faName = FA.name; window.__faAge = Math.min(FA.age + 1, 26); window.__faRep = Math.min(100, FA.rep); window.__faCash = FA.cash + (FA.champ ? 3 : 0);
-        const sl = FA.sl; begin(k);
-        window.__faName = window.__faAge = window.__faRep = window.__faCash = null;
-        if (S) { S.sl = sl; S.name = FA.name; }
+        window.__faCarry = { sl: FA.sl, name: FA.name, nat: FA.nat || "" };
+        begin(k);
       }
 function intro() {
+        window.__faCarry = window.__faName = window.__faAge = window.__faRep = window.__faCash = null;
         document.documentElement.style.setProperty("--sc", "#e10600");
         const fresh = !window.__hi;
         window.__hi = 1;
@@ -10866,6 +10867,11 @@ ${role ? `<div class="pn"><b>Después de las pistas</b><br>${EPI(role, T, sc)}</
           const d = $("#df") ? +$("#df").value : 1;
           _b(k);
           if (S) S.df = d;
+          if (window.__faCarry && S) {
+            const c = window.__faCarry;
+            S.sl = c.sl; S.name = c.name; if (c.nat) S.nat = c.nat;
+            window.__faCarry = window.__faName = window.__faAge = window.__faRep = window.__faCash = null;
+          }
         };
       }
       {
@@ -12853,7 +12859,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
           F4.ok = 0;
           const nt = $("#nt") ? $("#nt").value : "";
           _b(k);
-          if (S) S.nat = nt;
+          if (S && (nt || S.nat == null)) S.nat = nt;
           if (k === "f4" && S) S.f4id = F4.cur.id;
         };
         const _sl = svLoad;
