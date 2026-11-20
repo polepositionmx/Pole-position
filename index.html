@@ -13912,13 +13912,15 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
 /* ===== Revista: noticias del paddock antes de cada temporada ===== */
 (function () {
   const CW = { f1: 100, fe: 75, f2: 60, f3: 50, f4: 40 }, ORD = ["f1", "fe", "f2", "f3", "f4"];
-  const TAG = { champ: "Campeonato", xfer: "Fichaje", up: "Ascenso", ret: "Retiro", renew: "Renovación", prev: "Previa", back: "Regreso", deb: "Debut" };
+  const TAG = { champ: "Campeonato", con: "Constructores", circ: "Calendario", xfer: "Fichaje", up: "Ascenso", ret: "Retiro", renew: "Renovación", prev: "Previa", back: "Regreso", deb: "Debut" };
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
   const lab = (k) => (SERIES[k] ? SERIES[k].n : k);
   const col = (k) => (SERIES[k] ? SERIES[k].col : "#e10600");
   const EXTRA = {
     champ: ["En el paddock ya se habla de la defensa del título y de quién podrá arrebatárselo el próximo año.", "La temporada que viene promete: los rivales llegan con ganas de revancha."],
+    con: ["Los equipos ya trabajan en el desarrollo del próximo auto para defender o arrebatar el título.", "En las fábricas no hay descanso: la próxima batalla se juega desde el invierno."],
+    circ: ["Los equipos preparan paquetes específicos para esta cita, que suele marcar el pulso del campeonato.", "Los pilotos la tienen marcada en rojo desde el primer día de pretemporada."],
     xfer: ["Los directores de equipo confían en que el cambio rinda frutos desde las primeras carreras.", "El movimiento sacude el mercado y deja a más de un equipo mirando con atención."],
     up: ["Subir de categoría es el sueño de todo piloto joven, pero el nivel exigirá adaptarse rápido.", "Los ojos del paddock estarán puestos en cómo se desenvuelve en su nueva casa."],
     ret: ["El paddock despide a una figura que deja huella en la categoría.", "Su asiento ya tiene reemplazo, y la parrilla cambia de cara."],
@@ -13941,7 +13943,23 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
         : w ? (w[0] === k && w[1] ? ` El campeón correrá la próxima temporada con ${w[1]}.` : ` Su próximo destino: ${lab(w[0])}, con ${w[1]}.`)
         : " No volverá a la categoría el próximo año.";
       add(k, "champ", me ? `${c.d} se corona campeón de ${lab(k)}` : pick([`${c.d}, campeón de ${lab(k)}`, `${c.d} se queda con el título en ${lab(k)}`, `Reinado de ${c.d} en ${lab(k)}`]),
-        `${c.d} se llevó el campeonato de pilotos de ${lab(k)} y ${c.t} festejó el de constructores.${tail}`, me ? 1.3 : 1.7);
+        k === "f1" ? `${c.d} se llevó el campeonato de pilotos de ${lab(k)}.${tail}` : `${c.d} se llevó el campeonato de pilotos de ${lab(k)} y ${c.t} festejó el de constructores.${tail}`, me ? 1.3 : 1.7);
+      if (k === "f1" && c.t) add(k, "con", pick([`${c.t}, campeón de constructores de ${lab(k)}`, `${c.t} se queda con el título de constructores`]), `${c.t} cerró la temporada como campeón del campeonato de constructores de ${lab(k)}, el que premia el trabajo conjunto de todo el equipo.`, 1.2);
+    });
+    /* Calendario: solo si el circuito está de verdad en el calendario de la categoría (así la foto coincide con el texto) */
+    const CIRC = {};  /* una sola nota por circuito: en tu categoría si el circuito está en su calendario; si no, en la más importante */
+    [["mc", /Mónaco|Monaco/], ["im", /Imola/]].forEach(([id, re]) => {
+      const ks = ORD.filter((k) => typeof CAL !== "undefined" && CAL[k] && SERIES[k] && CAL[k].some((c) => re.test(c[0] + " " + c[1])));
+      CIRC[id] = ks.includes(S.series) ? S.series : ks[0];
+    });
+    ORD.forEach((k) => {
+      const C = typeof CAL !== "undefined" && CAL[k], X = SERIES[k]; if (!C || !X) return;
+      const at = (re) => C.map((c, i) => (re.test(c[0] + " " + c[1]) ? i + 1 : 0)).filter(Boolean), N = C.length;
+      const mc = CIRC.mc === k ? at(/Mónaco|Monaco/) : [], im = CIRC.im === k ? at(/Imola/) : [];
+      if (mc.length) add(k, "circ", mc.length > 1 ? `Mónaco recibe dos citas en el calendario de ${lab(k)}` : `Mónaco, la cita más glamorosa del calendario de ${lab(k)}`,
+        `${mc.length > 1 ? `Las rondas ${mc.join(" y ")} de ${N}` : `La ronda ${mc[0]} de ${N}`} de ${lab(k)} se corre en el Circuit de Monaco: un trazado urbano estrecho, sin margen de error, donde la clasificación pesa más que en cualquier otro circuito.`, 0.6);
+      if (im.length) add(k, "circ", `Imola, una de las ${N} paradas de la ${lab(k)}`,
+        `La ronda ${im[0]} de ${N} de la ${lab(k)} se disputa en el Autodromo Enzo e Dino Ferrari, un circuito histórico de Emilia-Romagna, rápido y técnico, donde los jóvenes miden su ritmo.`, 0.9);
     });
     /* Movimientos del mercado (generados por turnover) */
     const seen = new Set();
@@ -13985,32 +14003,44 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
     return out.sort((a, b) => b.s - a.s);
   }
 
-  /* Imágenes de img/revista/: cada una declara en qué categorías (k), tipos de noticia (kinds) y, si aplica, de qué equipo puede salir */
-  const ALLK = ["champ", "xfer", "up", "deb", "back", "prev", "renew", "ret"], SCN = ["prev", "up", "deb", "back", "renew", "xfer"];
+  /* Imágenes de img/revista/: cada una declara categorías (k), tipos de noticia (kinds) y, si aplica, una palabra que debe aparecer en el texto (team / kw).
+     Así la foto siempre coincide con lo que dice la nota. Máximo MAXI (3) imágenes por revista y 2 por categoría para no saturarla. */
+  const ALLK = ["champ", "xfer", "up", "deb", "back", "prev", "renew", "ret"], MAXI = 3;
   const MI = [
     { u: "img/revista/1.jpg", k: ["f4"], kinds: ALLK, c: "Fórmula 4 en acción" },
-    { u: "img/revista/2.jpg", k: ["f1"], kinds: ALLK, team: "Mercedes", pos: "50% 60%", c: "Mercedes en pista" },
-    { u: "img/revista/3.jpg", k: ["f1", "f2", "f3"], kinds: SCN, c: "Imola, vista desde el aire" },
-    { u: "img/revista/4.jpg", k: ["f1", "fe", "f2"], kinds: SCN, c: "Las tribunas de Montecarlo" },
+    { u: "img/revista/2.jpg", k: ["f1"], kinds: ["xfer", "up", "deb", "back", "prev", "renew"], team: "Mercedes", pos: "50% 60%", c: "Mercedes en pista" },
+    { u: "img/revista/3.jpg", k: ["f4"], kinds: ["circ"], kw: "Imola", c: "Imola, vista desde el aire" },
+    { u: "img/revista/4.jpg", k: ["f1", "f2", "f3", "fe"], kinds: ["circ"], kw: "Mónaco", c: "Las tribunas de Montecarlo" },
     { u: "img/revista/5.jpg", k: ["f1"], kinds: ["champ"], fit: 1, c: "El trofeo del campeonato de pilotos" },
-    { u: "img/revista/6.jpg", k: ["f1"], kinds: ["champ"], fit: 1, c: "El trofeo del campeonato de constructores" },
+    { u: "img/revista/6.jpg", k: ["f1"], kinds: ["con"], fit: 1, c: "El trofeo del campeonato de constructores" },
   ];
   const txt = (s) => s.h + " " + s.b;
-  const fits = (s) => MI.filter((m) => m.k.includes(s.k) && m.kinds.includes(s.kind) && (!m.team || txt(s).includes(m.team)));
-  let USED = new Set();
-  const img = (s, on) => {
-    if (!on) return "";
-    const c = fits(s).filter((m) => !USED.has(m.u)), tm = c.filter((m) => m.team), pl = tm.length ? tm : c;
-    if (!pl.length) return "";
-    const m = pick(pl); USED.add(m.u);
-    return `<figure class="mgfg"><img class="mgi${m.fit ? " ct" : ""}" src="${m.u}" alt="${esc(m.c)}" loading="lazy" ${m.pos ? `style="object-position:${m.pos}"` : ""} onerror="this.parentNode.remove()"><figcaption>${esc(m.c)}</figcaption></figure>`;
+  const fits = (s) => MI.filter((m) => m.k.includes(s.k) && m.kinds.includes(s.kind) && (!m.team || txt(s).includes(m.team)) && (!m.kw || txt(s).includes(m.kw)));
+  let USED = new Set(), IMG = new Map();
+  const pickImg = (s) => {
+    const c = fits(s).filter((m) => !USED.has(m.u)), sp = c.filter((m) => m.team || m.kw || m.fit), pl = sp.length ? sp : c;
+    return pl.length ? pick(pl) : null;
   };
+  /* Reparte las fotos entre las notas principales, de mayor a menor importancia: primero una por categoría (para que no sea todo F1) y luego completa hasta MAXI (máx. 2 por categoría) */
+  const assign = (L) => {
+    USED = new Set(); IMG = new Map(); const per = {};
+    [1, 2].forEach((cap) => {
+      for (const s of L) {
+        if (IMG.size >= MAXI) return; if (IMG.has(s) || (per[s.k] || 0) >= cap) continue;
+        const m = pickImg(s); if (!m) continue;
+        USED.add(m.u); IMG.set(s, m); per[s.k] = (per[s.k] || 0) + 1;
+      }
+    });
+  };
+  const fig = (m) => `<figure class="mgfg"><img class="mgi${m.fit ? " ct" : ""}" src="${m.u}" alt="${esc(m.c)}" loading="lazy" data-f="${m.u.split("/").pop()}" data-i="0" ${m.pos ? `style="object-position:${m.pos}"` : ""} onerror="mgE(this)"><figcaption>${esc(m.c)}</figcaption></figure>`;
+  /* Si las fotos no están en img/revista/, prueba otras carpetas comunes; si no aparece en ninguna, quita la foto sin romper la revista */
+  window.mgE = (i) => { const F = ["img/revista/", "img/", "images/", "revista/", ""], n = +i.dataset.i + 1; if (n < F.length) { i.dataset.i = n; i.src = F[n] + i.dataset.f; } else if (i.parentNode) i.parentNode.remove(); };
   const tag = (s) => `<div class="mgt" style="--c:${col(s.k)}"><span>${TAG[s.kind]}</span> ${esc(lab(s.k))}</div>`;
-  const art = (s, cls, im) => `<article class="mgs ${cls || ""}" data-k="${s.k}">${img(s, cls === "cv" || im)}${tag(s)}<h3>${esc(s.h)}</h3><p>${esc(s.b)}${cls === "cv" ? " " + esc(s.x) : ""}</p></article>`;
+  const art = (s, cls) => `<article class="mgs ${cls || ""}" data-k="${s.k}">${IMG.get(s) ? fig(IMG.get(s)) : ""}${tag(s)}<h3>${esc(s.h)}</h3><p>${esc(s.b)}${cls === "cv" ? " " + esc(s.x) : ""}</p></article>`;
 
   function html() {
-    const L = stories(); if (!L.length) return ""; USED = new Set();
-    const cv = L[0], sec = L.slice(1, 3), grid = L.slice(3, 12), tick = L.slice(12, 20);
+    const L = stories(); if (!L.length) return "";
+    const cv = L[0], sec = L.slice(1, 3), grid = L.slice(3, 12), tick = L.slice(12, 20); assign(L.slice(0, 12));
     const cham = (S.cham || []).slice(-1)[0];
     const strip = cham ? ORD.filter((k) => cham[k] && SERIES[k]).map((k) => `<div style="--c:${col(k)}"><small>Campeón ${esc(lab(k))}</small><b>${esc(cham[k].d)}</b></div>`).join("") : "";
     const chips = ["all", ...ORD].map((k) => `<button class="mgc" onclick="mgF('${k}',this)" ${k === "all" ? 'style="background:#14141a;color:#f4efe6"' : ""}>${k === "all" ? "Todas" : esc(lab(k))}</button>`).join("");
@@ -14019,8 +14049,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
 ${strip ? `<div class="mgcs">${strip}</div>` : ""}
 <div class="mgf">${chips}</div>
 ${art(cv, "cv")}
-<div class="mgg2">${sec.map((s) => art(s, "", 1)).join("")}</div>
-${grid.length ? `<div class="mgg3">${grid.map((s, i) => art(s, "", i < 3)).join("")}</div>` : ""}
+<div class="mgg2">${sec.map((s) => art(s)).join("")}</div>
+${grid.length ? `<div class="mgg3">${grid.map((s) => art(s)).join("")}</div>` : ""}
 ${tick.length ? `<div class="mgk"><b>Última hora</b>${tick.map((s) => `<span data-k="${s.k}">${esc(s.h)}</span>`).join("")}</div>` : ""}
 <button class="go" onclick="__mgGo()" style="margin-top:16px">Empezar la temporada →</button></div>`;
   }
