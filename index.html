@@ -1609,7 +1609,7 @@
 /* #app es siempre oscuro: el inicio fija su propia paleta para no depender del tema del sistema */
 .home{--ink:#f5f5f7;--mu:#a3a3b5;--ln:#303042;--pn:#1c1c28;--pn2:#262634;color:var(--ink)}
 .bar button.nv{white-space:nowrap}
-@media (max-width:560px){.bar .ut span{display:none}.bar .ut nav{margin-left:0;width:100%;justify-content:space-between}.bar button.nv{padding:6px 6px;font-size:11.5px}}
+@media (max-width:560px){.bar .ut>span:first-child{display:none}.bar .ut nav{margin-left:0;width:100%;justify-content:space-between}.bar button.nv{padding:6px 6px;font-size:11.5px}}
 
 
       .ft{margin-top:14px;padding-top:14px;border-top:1px solid var(--ln);display:grid;gap:12px}
@@ -14006,8 +14006,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
 #acm .g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}#acm .g div{background:#1d2028;border-radius:8px;padding:8px;text-align:center}#acm .g b{display:block;font-size:20px}`;
   css.textContent += `
 .bar .ut{gap:12px}
-.bar .ut span{font-weight:800;letter-spacing:.14em;opacity:1;color:#fff;display:flex;align-items:center;gap:8px}
-.bar .ut span:before{content:"";width:4px;height:14px;border-radius:2px;background:#e10600;box-shadow:0 0 10px #e10600aa}
+.bar .ut>span:first-child{font-weight:800;letter-spacing:.14em;opacity:1;color:#fff;display:flex;align-items:center;gap:8px}
+.bar .ut>span:first-child:before{content:"";width:4px;height:14px;border-radius:2px;background:#e10600;box-shadow:0 0 10px #e10600aa}
 .bar .ut nav{display:flex;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:none}
 .bar .ut nav::-webkit-scrollbar{display:none}
 .bar button.nv{white-space:nowrap;background:transparent;border:1px solid transparent;transition:background .15s,border-color .15s,transform .15s}
@@ -14023,7 +14023,7 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
 .acb[data-s="1"] .av:after{background:#f5a623;animation:acp 1s infinite}.acb[data-s="e"] .av:after{background:#ff4a43}
 @keyframes acp{50%{opacity:.35}}
 .acb .nm{max-width:110px;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:560px){.acb .nm{display:none}.bar button.acb{padding:3px}.bar button.acb.out{padding:6px 10px}.bar .ut span{display:none}.bar .ut nav{margin-left:0;width:100%}}`;
+@media(max-width:560px){.acb .nm{display:none}.bar button.acb{padding:3px}.bar button.acb.out{padding:6px 10px}.bar .ut>span:first-child{display:none}.bar .ut nav{margin-left:0;width:100%}}`;
   document.head.appendChild(css);
 
   function modal(html) {
