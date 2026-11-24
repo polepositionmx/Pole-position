@@ -3106,6 +3106,90 @@
         dnf: (s, v) => s.dnf <= v,
         wins: (s, v) => s.wins >= v,
       };
+      /* ===== Objetivos del equipo (todas las categorías menos F1 Academy) ===== */
+      function objGet() {
+        try {
+          if (typeof S === "undefined" || !S || !SERIES[S.series]) return null;
+          const o = S.ob;
+          if (o && o.s === S.series && o.t === S.team && o.se === S.season) return o;
+          const X = SERIES[S.series],
+            F = X.field,
+            N = (CAL[S.series] || []).length || 10;
+          let idx = X.teams.findIndex((t) => t[0] === S.team);
+          if (idx < 0) idx = X.teams.length - 1;
+          const exp = Math.min(F, 2 + idx * (S.series === "f3" ? 3 : 2)),
+            pos = Math.max(1, exp - (idx <= 1 ? 1 : 0)),
+            fw = pos === 1 ? 0.3 : pos <= 3 ? 0.15 : pos <= 6 ? 0.08 : 0,
+            fp = pos === 1 ? 0.55 : pos <= 3 ? 0.35 : pos <= 6 ? 0.2 : pos <= 10 ? 0.1 : 0;
+          S.ob = {
+            s: S.series,
+            t: S.team,
+            se: S.season,
+            N,
+            pos,
+            wins: pos === 1 ? Math.max(2, Math.round(N * fw)) : pos <= 3 ? Math.max(1, Math.round(N * fw)) : Math.round(N * fw),
+            pods: pos <= 10 ? Math.max(1, Math.round(N * fp)) : 0,
+          };
+          return S.ob;
+        } catch (e) {
+          return null;
+        }
+      }
+      /* Rendimiento = posición final vs. esperada (50%) + victorias (25%) + podios (25%) */
+      function objEval(rank, wins, pods) {
+        const o = objGet();
+        if (!o) return null;
+        const sc = (v, g) => (g > 0 ? cl((v - g) / Math.max(1, g), -1, 1.5) : v > 0 ? 0.4 : 0),
+          ps = cl((o.pos - rank) / Math.max(2, o.pos * 0.6 + 1), -1.5, 1.5),
+          perf = 0.5 * ps + 0.25 * sc(wins, o.wins) + 0.25 * sc(pods, o.pods),
+          pR = cl(0.7 + perf * 0.6 + (rank <= 3 ? 0.08 : 0) - (S.rep < 30 ? 0.1 : 0), 0.03, 0.98);
+        return Object.assign({}, o, { rank, w: wins, p: pods, perf: Math.round(perf * 100) / 100, pR, okPos: rank <= o.pos, okW: wins >= o.wins, okP: pods >= o.pods });
+      }
+      function objSum(e) {
+        return tcT(
+          `Posición P${e.rank} (meta P${e.pos}) · Victorias ${e.w}/${e.wins} · Podios ${e.p}/${e.pods}`,
+          `Posição P${e.rank} (meta P${e.pos}) · Vitórias ${e.w}/${e.wins} · Pódios ${e.p}/${e.pods}`,
+          `Position P${e.rank} (target P${e.pos}) · Wins ${e.w}/${e.wins} · Podiums ${e.p}/${e.pods}`,
+        );
+      }
+      function objPanel() {
+        const o = objGet();
+        if (!o) return "";
+        return `<div class="pn"><b>${tcT("Objetivos de " + S.team, "Metas da " + S.team, S.team + " objectives")}</b><p class="mu">${tcT(
+          "El equipo fija sus expectativas según el nivel del auto. Tu rendimiento (posición final, victorias y podios) decide si te renuevan cuando termine el contrato.",
+          "A equipe define suas expectativas conforme o nível do carro. Seu desempenho (posição final, vitórias e pódios) decide se você será renovado ao fim do contrato.",
+          "The team sets its expectations based on the car's level. Your performance (final position, wins and podiums) decides whether you get renewed when your contract ends.",
+        )}</p><div class="st"><div><b>P${o.pos}</b>${tcT("o mejor", "ou melhor", "or better")}</div><div><b>${o.wins}</b>${tcT("victorias", "vitórias", "wins")}</div><div><b>${o.pods}</b>${tcT("podios", "pódios", "podiums")}</div></div></div>`;
+      }
+      function objCell() {
+        const o = objGet();
+        if (!o) return "";
+        return `<div class="ft-c"><span class="ft-l">${tcT("Objetivos: ", "Metas: ", "Objectives: ")}</span><b>P${o.pos} · ${o.wins} ${tcT("vict.", "vit.", "wins")} · ${o.pods} ${tcT("pod.", "pód.", "pod.")}</b></div>`;
+      }
+      function objBlock(e) {
+        if (!e) return "";
+        const mk = (b) => `<b style="color:${b ? "#128a4a" : "#d3302f"}">${b ? "✓" : "✗"}</b>`,
+          n = (e.okPos ? 1 : 0) + (e.okW ? 1 : 0) + (e.okP ? 1 : 0),
+          ends = !(S.cy > 0 && !(S.cl && e.rank <= 3)),
+          row = (l, m, g, b) => `<tr><td>${l}</td><td>${m}</td><td>${g}</td><td>${mk(b)}</td></tr>`;
+        return `<h3>${tcT("Objetivos del equipo", "Metas da equipe", "Team objectives")}</h3><div class="tw"><table><tr><th>${tcT("Objetivo", "Meta", "Objective")}</th><th>${tcT("Meta", "Alvo", "Target")}</th><th>${tcT("Logrado", "Conseguido", "Achieved")}</th><th></th></tr>${row(tcT("Posición final", "Posição final", "Final position"), "P" + e.pos + " " + tcT("o mejor", "ou melhor", "or better"), "P" + e.rank, e.okPos)}${row(tcT("Victorias", "Vitórias", "Wins"), e.wins || "—", e.w, e.okW)}${row(tcT("Podios", "Pódios", "Podiums"), e.pods || "—", e.p, e.okP)}</table></div><p class="mu">${tcT(
+          "Balance: " + n + "/3 objetivos cumplidos. ",
+          "Balanço: " + n + "/3 metas cumpridas. ",
+          "Result: " + n + "/3 objectives met. ",
+        )}${
+          ends
+            ? tcT(
+                "Probabilidad de que el equipo te renueve según tu rendimiento: " + Math.round(e.pR * 100) + "%.",
+                "Chance de a equipe renovar com você, segundo seu desempenho: " + Math.round(e.pR * 100) + "%.",
+                "Chance the team renews you based on your performance: " + Math.round(e.pR * 100) + "%.",
+              )
+            : tcT(
+                "Tu contrato sigue vigente; la renovación se evaluará cuando termine.",
+                "Seu contrato segue vigente; a renovação será avaliada quando ele terminar.",
+                "Your contract is still running; renewal will be assessed when it ends.",
+              )
+        }</p>`;
+      }
       function spons() {
         const X = SERIES[S.series],
           m = (X.pay / 8 + 0.6) * (1 + AG().spon),
@@ -3137,7 +3221,7 @@
         SPO = A;
         col();
         R_(
-          `${card()}<h2>Patrocinadores</h2><p class="mu">Varias marcas te ofrecen un trato por objetivos. Si cumplís cobrás el premio; si no, tu reputación sufre.</p>${S.ag ? `<p class="mu">Tu representante (${AGB[S.ag].n}) mejora los premios un +${Math.round(AG().spon * 100)}%${S.ag === 2 ? " y consiguió una opción extra" : ""}.</p>` : ""}${A.map((a, i) => `<button class="cb" onclick="spPick(${i})"><b>${a.t}</b><br><span class="mu">Premio: €${a.r} M</span></button>`).join("")}<button class="cb" onclick="spPick(-1)">Sin patrocinador</button>`,
+          `${card()}${objPanel()}<h2>Patrocinadores</h2><p class="mu">Varias marcas te ofrecen un trato por objetivos. Si cumplís cobrás el premio; si no, tu reputación sufre.</p>${S.ag ? `<p class="mu">Tu representante (${AGB[S.ag].n}) mejora los premios un +${Math.round(AG().spon * 100)}%${S.ag === 2 ? " y consiguió una opción extra" : ""}.</p>` : ""}${A.map((a, i) => `<button class="cb" onclick="spPick(${i})"><b>${a.t}</b><br><span class="mu">Premio: €${a.r} M</span></button>`).join("")}<button class="cb" onclick="spPick(-1)">Sin patrocinador</button>`,
         );
       }
       const spPick = (i) => {
@@ -6690,6 +6774,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         LGX = (h) => h;
       /* ===== NOVEDADES (changelog): para agregar una versión, sumá un objeto ARRIBA de CHANGELOG ===== */
       const CHANGELOG = [
+{v:"1.37",d:"24/11/2026",es:["Nuevo: objetivos del equipo en F4, F3, F2, F1 y Fórmula E (la F1 Academy no los tiene). Al empezar cada temporada el equipo fija una meta de posición final, victorias y podios según el nivel de su auto.","Al terminar la temporada se compara tu rendimiento con esas metas (resultado esperado, victorias y podios) y de eso depende que el equipo te renueve o no. Ves el balance y tu probabilidad de renovación en la pantalla final."],pt:["Novo: metas da equipe na F4, F3, F2, F1 e Fórmula E (a F1 Academy não as tem). No início de cada temporada a equipe define uma meta de posição final, vitórias e pódios conforme o nível do carro.","Ao fim da temporada seu desempenho é comparado com essas metas (resultado esperado, vitórias e pódios) e disso depende a renovação do contrato. O balanço e a chance de renovação aparecem na tela final."],en:["New: team objectives in F4, F3, F2, F1 and Formula E (F1 Academy does not have them). At the start of each season the team sets a target for final position, wins and podiums based on its car's level.","At the end of the season your performance is compared with those targets (expected result, wins and podiums) and that decides whether the team renews you. The balance and your renewal chance are shown on the final screen."]},
 {v:"1.36",d:"23/11/2026",es:["Dirección y fundación de equipo: se corrigió la economía. El presupuesto del equipo ya no queda clavado ni se agota año tras año: ahora recibe aportes de la categoría, premios y patrocinadores, y paga costos operativos. Un equipo de mitad de tabla puede sostener un programa de desarrollo normal, y los equipos fundados por vos tienen más ingresos.","Nuevo estado de cuenta al cierre de cada temporada con el equipo que dirigís: saldo inicial, ingresos, gastos, resultado del año y saldo final. En modo director se muestra por separado el presupuesto del equipo y tus ahorros.","El dinero se actualiza al instante cuando gastás o cobrás, con un aviso de cuánto subió o bajó. Por ejemplo, los puntos del plan técnico se descuentan en el momento en que los asignás (y se devuelven si los sacás). En modo director ahora ves tus ahorros siempre a la vista.","Editor de logo: en vez de menús desplegables, ahora cambiás cada elemento con las flechas ◀ ▶ y ves el resultado en vivo.","Logo: más formas (14), patrones (16) y elementos (30), y nuevos textos. Nuevas opciones de edición: tamaño, posición, rotación y espejo del elemento, ubicación y tipografía del texto, grosor del borde, doble borde, efectos (brillo, degradados, sombra, lustre metálico) y colores separados para patrón, elemento, borde y texto. Botón para restablecer el diseño."],pt:["Direção e fundação de equipe: a economia foi corrigida. O orçamento da equipe não fica mais travado nem se esgota ano após ano: agora recebe aportes da categoria, prêmios e patrocinadores, e paga custos operacionais. Uma equipe do meio da tabela consegue manter um programa de desenvolvimento normal, e as equipes fundadas por você têm mais receita.","Novo extrato da conta no fim de cada temporada com a equipe que você dirige: saldo inicial, receitas, despesas, resultado do ano e saldo final. No modo diretor, o orçamento da equipe e suas economias aparecem separados.","O dinheiro é atualizado na hora quando você gasta ou recebe, com um aviso de quanto subiu ou desceu. Por exemplo, os pontos do plano técnico são descontados no momento em que você os distribui (e devolvidos se você os retira). No modo diretor, agora você vê suas economias sempre à mostra.","Editor de logo: em vez de menus suspensos, agora você troca cada elemento com as setas ◀ ▶ e vê o resultado ao vivo.","Logo: mais formas (14), padrões (16) e elementos (30), e novos textos. Novas opções de edição: tamanho, posição, rotação e espelho do elemento, posição e tipografia do texto, espessura da borda, borda dupla, efeitos (brilho, degradês, sombra, brilho metálico) e cores separadas para padrão, elemento, borda e texto. Botão para restaurar o desenho."],en:["Team management and founding: the economy was fixed. The team budget no longer gets stuck or runs dry year after year: it now receives funding from the category, prize money and sponsors, and pays operating costs. A mid-table team can sustain a normal development programme, and teams you found earn more.","New statement of account at the end of each season for the team you run: opening balance, income, expenses, result of the year and closing balance. In director mode the team budget and your savings are shown separately.","Money now updates instantly when you spend or earn, with a note showing how much it went up or down. For example, technical plan points are charged the moment you assign them (and refunded if you remove them). In director mode your savings are now always in view.","Logo editor: instead of drop-down menus, you now change each element with the ◀ ▶ arrows and see the result live.","Logo: more shapes (14), patterns (16) and elements (30), plus new texts. New editing options: size, position, rotation and mirroring of the element, text placement and typeface, border thickness, double border, effects (shine, gradients, shadow, metallic sheen) and separate colours for pattern, element, border and text. Button to reset the design."]},
 {v:"1.35",d:"23/11/2026",es:["Nuevo: «Buscar equipos por mi cuenta» en la pantalla de ofertas. Elegís a qué equipos golpear la puerta, de tu categoría o de otras (desde F4 también ves las F4 regionales de más prestigio). Cada equipo decide si te recibe: cuanto más top, más difícil, y también pesan tu reputación, tu palmarés y el nivel de tu representante.","Palmarés: una F1 vale mucho más que una F4, y entre las F4 cuenta el prestigio del campeonato. Cuanto más abajo estés en la escalera, menos te sirve el dinero para comprar un asiento en una categoría alta; lo recomendable es subir por mérito propio.","Entrevista en la oficina del equipo: 3 preguntas con tres respuestas cada una. Lo que respondas (y tus stats) define la impresión que dejás.","Negociación con oferta y contraoferta: pedís sueldo y bonus por podio y victoria, o elegís pagar por el asiento. El equipo acepta, contraoferta o se levanta de la mesa. Los equipos con problemas de dinero aceptan más fácil a quien paga y pagan peor los sueldos.","Pagar por un asiento puede bajarte la reputación, sobre todo si el equipo es top, si apuntás más arriba de donde estás o si tenías mérito para entrar sin pagar.","Economía negativa: podés endeudarte para pagar un asiento (con interés del 10 % anual y costo de reputación), y los equipos pueden entrar en crisis y quedar con presupuesto negativo, marcado con ⚠ en el Mercado. Un equipo en deuda no desarrolla el auto."],pt:["Novo: «Procurar equipes por conta própria» na tela de ofertas. Você escolhe a quais equipes bater na porta, da sua categoria ou de outras (a partir da F4 você também vê as F4 regionais de mais prestígio). Cada equipe decide se te recebe: quanto mais top, mais difícil, e também pesam sua reputação, seu histórico de títulos e o nível do seu agente.","Histórico de títulos: uma F1 vale muito mais que uma F4, e entre as F4 conta o prestígio do campeonato. Quanto mais abaixo você estiver na escada, menos o dinheiro serve para comprar um assento numa categoria alta; o recomendável é subir por mérito próprio.","Entrevista no escritório da equipe: 3 perguntas com três respostas cada uma. O que você responde (e seus atributos) define a impressão que você deixa.","Negociação com oferta e contraoferta: você pede salário e bônus por pódio e vitória, ou escolhe pagar pelo assento. A equipe aceita, faz contraoferta ou se levanta da mesa. Equipes com problemas de dinheiro aceitam mais fácil quem paga e pagam pior os salários.","Pagar por um assento pode diminuir sua reputação, principalmente se a equipe é top, se você mira mais alto do que está ou se tinha mérito para entrar sem pagar.","Economia negativa: você pode se endividar para pagar um assento (com juros de 10 % ao ano e custo de reputação), e as equipes podem entrar em crise e ficar com orçamento negativo, marcado com ⚠ no Mercado. Uma equipe endividada não desenvolve o carro."],en:["New: «Look for teams on my own» on the offers screen. You choose which teams to knock on, in your category or others (from F4 you also see the more prestigious regional F4s). Each team decides whether to meet you: the bigger the team, the harder it is, and your reputation, track record and agent level also count.","Track record: an F1 result is worth far more than an F4 one, and among F4s the championship's prestige counts. The further down the ladder you are, the less money helps you buy a seat in a high category; the recommended path is to move up on merit.","Interview in the team's office: 3 questions with three answers each. Your answers (and your stats) decide the impression you leave.","Negotiation with offers and counteroffers: ask for a salary plus podium and win bonuses, or choose to pay for the seat. The team accepts, counters or walks away. Teams short on cash accept paying drivers more easily and pay worse salaries.","Paying for a seat can cost you reputation, especially if the team is a top one, if you aim above your current level or if you had the merit to get in without paying.","Negative economy: you can go into debt to pay for a seat (10 % yearly interest and a reputation cost), and teams can fall into crisis and end up with a negative budget, marked with ⚠ in the Market. A team in debt cannot develop its car."]},
 {v:"1.34",d:"23/11/2026",es:["Casino: se quitó la elección de dificultad (Fácil, Normal y Realista). Ahora hay un único modo, el que antes era Realista: la ruleta paga 35 a 1 sin La Partage, el blackjack paga 6 a 5 y el crupier pide con 17 blando, y la apuesta máxima es de 50 M.","Vitrina: trofeos rediseñados, con copas metálicas para los campeones de pilotos y escudos con laurel para los de constructores."],pt:["Cassino: foi removida a escolha de dificuldade (Fácil, Normal e Realista). Agora há um único modo, o que antes era o Realista: a roleta paga 35 para 1 sem La Partage, o blackjack paga 6 para 5 e o crupiê pede carta no 17 soft, e a aposta máxima é de 50 M.","Vitrine: troféus redesenhados, com taças metálicas para os campeões de pilotos e escudos com louros para os de construtores."],en:["Casino: the difficulty choice (Easy, Normal and Realistic) was removed. There is now a single mode, the former Realistic one: roulette pays 35 to 1 without La Partage, blackjack pays 6 to 5 and the dealer hits soft 17, and the maximum bet is 50 M.","Showcase: redesigned trophies, with metallic cups for driver champions and laurel shields for constructors."]},
@@ -9463,7 +9548,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         return `${ladder()}<div class="pn"><div class="top"><b>${S.nat ? flg(S.nat) + " " : ""}${S.name}</b><span class="cpr"><span class="cp">🎂 ${S.age} años</span><span class="cp">📅 Temporada ${S.season}</span></span></div>
 <div class="tm2" style="--tc:${tcol(S.team)}"><div class="tm2h">${badge(S.team)}<div class="tm2n"><b>${S.team}</b><span>${X.n}</span></div><div class="tm2l">${logo(S.series, 22)}</div></div><div class="tm2g"><div class="tm2s"><span class="k">🏎️ Auto</span><b>${S.car}</b><i style="--v:${Math.min(100, S.car)}%"></i></div><div class="tm2s"><span class="k">💰 Fondos del equipo</span><b class="mny">€${(myTm() || [0, 0, 0])[2]} M</b></div></div></div>${ovrCard()}${meter("Ritmo", S.pace)}${meter("Carrera", S.craft)}${meter("Regularidad", S.cons)}${meter("Reputación", S.rep)}<details><summary>¿Qué significa cada estadística?</summary>Ritmo: velocidad pura. Carrera: adelantamientos y estrategia. Regularidad: menos errores y abandonos. Reputación: define qué equipos te quieren. Auto: lo que te da tu equipo.</details>
 <div class="ft"><div class="ft-top"><div class="ft-money"><span class="ft-l">Mis fondos: </span><b class="ft-v">€${S.cash} M</b></div><div class="ft-act"><button class="ft-b main" onclick="invest()"><span aria-hidden="true">💰</span><span>Invertir</span></button><button class="ft-b" onclick="vitrina()"><span aria-hidden="true">🏆</span><span>Vitrina</span></button><button class="ft-b" onclick="slots()"><span aria-hidden="true">💾</span><span>Guardar</span></button></div></div>
-<div class="ft-grid"><div class="ft-c"><span class="ft-l">Contrato: </span><b>${S.cy > 0 ? S.cy + 1 + " años" : "último año"}</b></div>${S.ag ? `<div class="ft-c"><span class="ft-l">Representante: </span><b>${AGB[S.ag].n}</b></div>` : ""}<div class="ft-c"><span class="ft-l">Esta temporada: </span><b>${plu((SE || {}).wins || 0, "victoria", "victorias")}, ${plu((SE || {}).pods || 0, "podio", "podios")}</b></div><div class="ft-c"><span class="ft-l">Carrera: </span><b>${plu(S.wins, "victoria", "victorias")}, ${plu(S.pods, "podio", "podios")}</b></div>${S.pt ? `<div class="ft-c"><span class="ft-l">Pareja: </span><b>${S.lv}/100</b></div>` : ""}<div class="ft-c"><span class="ft-l">Títulos: </span><b${S.titles.f1 + S.titles.f2 + S.titles.f3 + S.titles.fe + (S.titles.f4 || 0) > 0 ? ' style="color:#f5c542"' : ""}>${S.titles.f1 + S.titles.f2 + S.titles.f3 + S.titles.fe + (S.titles.f4 || 0)}</b></div></div></div></div>`;
+<div class="ft-grid"><div class="ft-c"><span class="ft-l">Contrato: </span><b>${S.cy > 0 ? S.cy + 1 + " años" : "último año"}</b></div>${S.ag ? `<div class="ft-c"><span class="ft-l">Representante: </span><b>${AGB[S.ag].n}</b></div>` : ""}${objCell()}<div class="ft-c"><span class="ft-l">Esta temporada: </span><b>${plu((SE || {}).wins || 0, "victoria", "victorias")}, ${plu((SE || {}).pods || 0, "podio", "podios")}</b></div><div class="ft-c"><span class="ft-l">Carrera: </span><b>${plu(S.wins, "victoria", "victorias")}, ${plu(S.pods, "podio", "podios")}</b></div>${S.pt ? `<div class="ft-c"><span class="ft-l">Pareja: </span><b>${S.lv}/100</b></div>` : ""}<div class="ft-c"><span class="ft-l">Títulos: </span><b${S.titles.f1 + S.titles.f2 + S.titles.f3 + S.titles.fe + (S.titles.f4 || 0) > 0 ? ' style="color:#f5c542"' : ""}>${S.titles.f1 + S.titles.f2 + S.titles.f3 + S.titles.fe + (S.titles.f4 || 0)}</b></div></div></div></div>`;
       }
       function setMode(m) {
         MODE = m;
@@ -10310,12 +10395,13 @@ ${tRows}<button class="go" onclick="nextRound()">${SE.i >= N ? "Ver resumen de l
           (rank > 8
             ? `<tr class="me"><td style="border-left:4px solid ${tcol(S.team)}">${rank}</td><td>${S.name}</td>${TT(S.team)}<td>${pts}</td></tr>`
             : "");
-        rep_ = { rank };
+        const OB = objEval(rank, wins, pods);
+        rep_ = { rank, ob: OB };
         col();
         if (rank === 1) setTimeout(confetti, 300);
         R_(`${logo(S.series, 34)}<p class="mu">${X.n} · ${S.team} · Temporada ${S.season}</p><div class="big">${rank === 1 ? "Campeón" : "P" + rank}</div><p class="lead">${rank === 1 ? "Ganaste el título. Tu nombre queda en la historia." : rank <= 3 ? "Un gran año: peleaste arriba hasta el final." : rank <= 10 ? "Una temporada sólida en mitad de tabla alta." : "Un año difícil. Hay que levantarse."}</p>
 <div class="st"><div><b>${pts}</b>puntos</div><div><b>${wins}</b>victorias</div><div><b>${pods}</b>podios</div><div><b>${dnf}</b>abandonos</div></div>
-<h3>Resultados carrera por carrera</h3><div class="strip">${res
+${objBlock(OB)}<h3>Resultados carrera por carrera</h3><div class="strip">${res
           .map((r, i) => {
             const g = gp(CAL[S.series][i]);
             return `<span class="p ${r === "DNF" || r === "DNS" ? "x" : r <= 3 ? "pd" : ""}" title="${CAL[S.series][i][0]}">${flg(g[2])}<small>${g[1]}</small>${r}</span>`;
@@ -10348,7 +10434,7 @@ ${teamRows(8)}${vizBlock()}${EX}<h3>Evolución</h3>${chips({ pace: d.pace, craft
             0.04,
             0.98,
           ),
-          keep = Math.random() < pR,
+          keep = Math.random() < (rep_.ob ? rep_.ob.pR : pR),
           th =
             38 +
             AG().th +
@@ -10464,7 +10550,7 @@ ${teamRows(8)}${vizBlock()}${EX}<h3>Evolución</h3>${chips({ pace: d.pace, craft
           out.sort((a, b) => (LV[b.se] || 0) - (LV[a.se] || 0) || b.c - a.c);
         }
         window._o = out;
-        R_(`${card()}${keep ? "" : `<div class="pn"><b>${S.team} no va a renovarte.</b> El rendimiento no alcanzó lo que esperaban.</div>`}<h2>Ofertas para la próxima temporada</h2>${S.series === "f4" ? `<p class="mu">Prestigio de ${F4.cur.n}: ${F4.cur.rel}/10. Cuanto más prestigio, más chances de que un equipo de F3 se fije en vos (esta vez: ${Math.round(f4p3(F4.cur.rel, rank) * 100)}%). Desde un campeonato menor primero tenés que dar el salto a una F4 más prestigiosa.</p>` : ""}<p class="mu">Elegí tu próximo equipo. Tu reputación y tu posición en el campeonato definen qué puertas se abren.</p>${S.ag ? `<p class="mu">Tu representante (${AGB[S.ag].n}) ${out.some((o) => o.tag === "Oferta de tu representante") ? "te consiguió ofertas extra y mejora" : "mejora"} tus condiciones en la negociación.</p>` : ""}
+        R_(`${card()}${rep_.ob ? `<div class="pn"><b>${S.team} ${keep ? tcT("quiere renovarte.", "quer renovar com você.", "wants to renew you.") : tcT("no va a renovarte.", "não vai renovar com você.", "will not renew you.")}</b> ${objSum(rep_.ob)}.</div>` : keep ? "" : `<div class="pn"><b>${S.team} no va a renovarte.</b> El rendimiento no alcanzó lo que esperaban.</div>`}<h2>Ofertas para la próxima temporada</h2>${S.series === "f4" ? `<p class="mu">Prestigio de ${F4.cur.n}: ${F4.cur.rel}/10. Cuanto más prestigio, más chances de que un equipo de F3 se fije en vos (esta vez: ${Math.round(f4p3(F4.cur.rel, rank) * 100)}%). Desde un campeonato menor primero tenés que dar el salto a una F4 más prestigiosa.</p>` : ""}<p class="mu">Elegí tu próximo equipo. Tu reputación y tu posición en el campeonato definen qué puertas se abren.</p>${S.ag ? `<p class="mu">Tu representante (${AGB[S.ag].n}) ${out.some((o) => o.tag === "Oferta de tu representante") ? "te consiguió ofertas extra y mejora" : "mejora"} tus condiciones en la negociación.</p>` : ""}
 ${out
   .map((o, i) => {
     const d = o.c - S.car,
