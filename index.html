@@ -997,7 +997,8 @@
         clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
         padding-right: 40px;
         transition:
-          filter 0.12s,          transform 0.12s;
+          filter 0.12s,
+          transform 0.12s;
       }
       .go:hover {
         filter: brightness(1.12);
@@ -1996,7 +1997,8 @@
         [
           "tfe",
           "Campeón de Fórmula E",
-          "Ganá el título de Fórmula E.",          (S) => S.titles.fe > 0,
+          "Ganá el título de Fórmula E.",
+          (S) => S.titles.fe > 0,
         ],
         [
           "slam",
@@ -2995,7 +2997,8 @@
           "el motor eléctrico",
           "la suspensión",
         ];
-      const duelTxt = () =>        SE.D.some((d) => d.team === S.team && !d.me)
+      const duelTxt = () =>
+        SE.D.some((d) => d.team === S.team && !d.me)
           ? `<p class="mu">Duelo interno con ${mate()}: ${SE.dm.me} a ${SE.dm.mt}</p>`
           : "";
       const payCost = (i) => {
@@ -3994,7 +3997,8 @@
             note = ` La prensa criticó que pagaras por el asiento: −${l} de reputación.`;
           } else note = " Pagar por el asiento pasó casi desapercibido.";
         }
-        window._o = [{ se: T.se, n: T.n, c: T.car, f4: T.f4 }];        window._pay = pay ? 1 : 0;
+        window._o = [{ se: T.se, n: T.n, c: T.car, f4: T.f4 }];
+        window._pay = pay ? 1 : 0;
         window._ncOv = {
           sal: pay ? 0 : d.sal,
           bn: pay ? T.base.bn : d.bn,
@@ -4993,7 +4997,8 @@
             [
               "Mantener la calma",
               0.6,
-              { cons: 1, q: 1 },              { q: -1 },
+              { cons: 1, q: 1 },
+              { q: -1 },
               "Te mantenés enfocado.",
               "La falta de kilómetros se nota.",
             ],
@@ -5992,7 +5997,8 @@
           c: [
             [
               "Ir con ritmo",
-              0.45,              { r: 6 },
+              0.45,
+              { r: 6 },
               { r: -5 },
               "Te escapás del pelotón.",
               "Te quedás sin energía.",
@@ -6991,7 +6997,8 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
           Carrera: "Corrida",
           Clasificación: "Classificação",
           Ronda: "Rodada",
-          rondas: "rodadas",          "Elegí tu equipo": "Escolha sua equipe",
+          rondas: "rodadas",
+          "Elegí tu equipo": "Escolha sua equipe",
           Negociar: "Negociar",
           Duración: "Duração",
           Invertir: "Investir",
@@ -7990,7 +7997,8 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
           "«Mantengamos el ritmo, vamos bien.»",
         ],
       };
-      function rlog(D, grid, pp, dn, ds, cnd, tyi, FL, tr) {        const pk = (x) => x[Math.floor(Math.random() * x.length)],
+      function rlog(D, grid, pp, dn, ds, cnd, tyi, FL, tr) {
+        const pk = (x) => x[Math.floor(Math.random() * x.length)],
           p = dn ? 0 : pp + 1,
           g = gp(tr);
         (SE.log = SE.log || []).push({
@@ -8989,7 +8997,8 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
             ],
             [
               "Rechazar",
-              0.9,              { cred: 1 },
+              0.9,
+              { cred: 1 },
               {},
               "Te enfocás en la TV.",
               "Sin cambios.",
@@ -9988,7 +9997,8 @@ function intro() {
       }
       function pick(i) {
         const c = ev[evI].c[i],
-          ok = Math.random() < c[1],          e = {};
+          ok = Math.random() < c[1],
+          e = {};
         for (const [k, v] of Object.entries(ok ? c[2] : c[3]))
           e[k] = Math.round(v * (0.6 + Math.random() * 0.8)) || Math.sign(v);
         apply(e);
@@ -10987,7 +10997,8 @@ ${role ? `<div class="pn"><b>Después de las pistas</b><br>${EPI(role, T, sc)}</
         ],
       );
       const M = (t, d, c) => ({ t, d, c });
-      MEV.push(        M(
+      MEV.push(
+        M(
           "Se rompe el túnel de viento",
           "Una falla frena el desarrollo en plena temporada.",
           [
@@ -11986,7 +11997,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
               "Se votan cosas en tu contra.",
             ],
           ],
-        ),        M2(
+        ),
+        M2(
           "Auto accidentado en pretemporada",
           "Un golpe en un test daña el chasis.",
           [
@@ -12985,7 +12997,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
         "Una marca nueva llega",
         "Un fabricante de lujo entra a la categoría.",
         [
-          [            "Ofrecerte como piloto",
+          [
+            "Ofrecerte como piloto",
             0.5,
             { rep: 5, cash: 15 },
             { rep: -1 },
@@ -13984,7 +13997,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
                 { n: "Intermedios", c: "#3fae49", f: 0.8 * j() },
                 { n: "Lluvia", c: "#2f6fd0", f: 0.6 * j() },
                 { n: "Medios", c: "#f5c542", f: 0.25 * j() },
-              ]            : [
+              ]
+            : [
                 { n: "Blandos", c: "#e10600", f: 0.4 * j() },
                 { n: "Medios", c: "#f5c542", f: 0.62 * j() },
                 { n: "Duros", c: "#cfd6df", f: 0.9 * j() },
@@ -14983,7 +14997,8 @@ ${tl ? `<p class="mu">Títulos de pilotos: ${tl}</p>` : ""}<h3>Historial deporti
         R_(`<h2>${k === "f4" ? F4D.find((r) => r.id === id).n : X.n}</h2><p class="mu">¿Con qué estructura arrancás? Cuanto más invertís, mejor es el auto inicial. Ahorros: €${tcCash()} M.</p>${N.map((n, l) => { const c = X.pay * [4, 7, 11][l]; return `<button class="cb" ${tcCash() >= c ? "" : "disabled style='opacity:.45'"} onclick="tcMake('${k}','${id}',${l})"><b>${n}</b> · €${c} M<br><span class="mu">Auto de nivel ${Math.round(lo + F[l] * (hi - lo))} (rivales entre ${lo} y ${hi}).</span></button>`; }).join("")}<button class="lk" style="margin-left:0" onclick="${k === "f4" ? "tcF4()" : "tcCat()"}">Volver</button>`);
       }
       function tcMake(k, id, l) {
-        if (k === "f4") f4sw(id);        const X = SERIES[k],
+        if (k === "f4") f4sw(id);
+        const X = SERIES[k],
           rs = X.teams.map((t) => t[1]),
           lo = Math.min(...rs),
           hi = Math.max(...rs),
@@ -15982,7 +15997,8 @@ ${tick.length ? `<div class="mgk"><b>Última hora</b>${tick.map((s) => `<span da
     e.innerHTML = `<small id="crul">${rules(TAB)}</small>`;
     lock();
   }
-  function open() {    if (!S || typeof S.cash !== "number") return;
+  function open() {
+    if (!S || typeof S.cash !== "number") return;
     if ((S.age || 0) < MIN_AGE) { alert("Solo pueden entrar los mayores de " + MIN_AGE + " años."); return; }
     if (q("#cas")) q("#cas").remove(); SESSION = 0; BUSY = false; RB = {}; RST = []; G = null;
     const o = document.createElement("div"); o.id = "cas";
@@ -16285,4 +16301,4 @@ ${reg ? "" : '<button class="s" id="acrs">Olvidé mi contraseña</button>'}
 
 </script>
 </body>
-</html></html>
+</html>
