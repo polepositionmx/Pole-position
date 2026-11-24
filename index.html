@@ -1502,6 +1502,14 @@
       .mv-spr{font-size:28px;font-weight:800;font-style:italic;color:var(--k)}
       .mv-spk{display:flex;flex-wrap:wrap;gap:6px}.mv-spk span{border:1px solid var(--ln);border-radius:99px;padding:2px 9px;font-size:12px}
       .mv-risk{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--mu)}.mv-risk i{width:26px;height:6px;border-radius:3px;background:var(--ln)}.mv-risk i.on{background:var(--k)}
+.sx-off{width:100%;height:auto;display:block;margin:0 0 10px;border-radius:12px}
+.sx-q{font-size:1.15rem;font-weight:600;line-height:1.35;margin:14px 0}
+.sx-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:12px 14px;margin:8px 0}
+.sx-st{display:flex;align-items:center;gap:10px;white-space:nowrap}
+.sx-st button{width:38px;height:38px;border-radius:50%;border:1px solid var(--ln);background:transparent;color:inherit;font-size:1.25rem;line-height:1;cursor:pointer}
+.sx-st button:hover{border-color:var(--sc)}
+.sx-pat{letter-spacing:3px;color:var(--sc)}
+.sx-neg{color:#e5484d}
 </style>
   <style>
 .lad a{display:inline-flex;align-items:center;border-radius:8px;background:var(--pn2);padding:5px 12px;transform:skewX(-14deg);opacity:.7;border:1px solid transparent;text-decoration:none;color:var(--mu);font:700 13px Formula1,sans-serif}
@@ -1827,7 +1835,7 @@
             const pos = st.T.findIndex((x) => x.team === t[0]),
               p01 = pos < 0 ? 0.5 : 1 - pos / (n - 1),
               prize = Math.round(X.tb * (0.2 + 0.5 * p01)),
-              spend = Math.round(t[2] * (0.3 + Math.random() * 0.15)),
+              spend = Math.round(Math.max(0, t[2]) * (0.3 + Math.random() * 0.15)),
               rel = spend / (X.tb * 0.9);
             let d = Math.round(
               (rel - avgRel) * 8 -
@@ -1841,10 +1849,10 @@
             const old = t[1];
             t[1] = cl(t[1] + d, 38, 99);
             dl[t[0]] = t[1] - old;
-            t[2] = Math.max(
-              2,
-              t[2] - spend + prize + R(0, Math.round(X.tb * 0.1)),
-            );
+            let nb = t[2] - spend + prize + R(0, Math.round(X.tb * 0.1));
+            if (Math.random() < 0.06 + (p01 < 0.3 ? 0.06 : 0))
+              nb -= Math.round(X.tb * (0.6 + Math.random()));
+            t[2] = Math.max(-Math.round(X.tb * 1.5), nb);
           });
           X.teams.sort((a, b) => b[1] - a[1]);
           if (k === S.series)
@@ -3051,7 +3059,7 @@
         SE.noFund = 0;
         if (tm && tm[2] >= c) tm[2] -= c;
         else {
-          if (tm) tm[2] = 0;
+          if (tm) tm[2] = Math.min(0, tm[2]);
           g = Math.ceil(g / 2);
           SE.noFund = 1;
         }
@@ -3173,6 +3181,18 @@
           msg: "",
         };
         NC.y = cl(2, durR()[0], durR()[1]);
+        if (window._ncOv) {
+          const v = window._ncOv;
+          window._ncOv = null;
+          NC.pay = !!v.pay;
+          NC.sal = v.pay ? 0 : v.sal;
+          NC.bn = v.bn;
+          NC.wb = v.wb;
+          NC.pat = 0;
+          NC.msg =
+            "Condiciones acordadas en la entrevista. Solo falta definir la duración." +
+            (v.note || "");
+        }
       }
       const sigT = () => NC.sig + (NC.y === 3 ? Math.round(NC.u * 2) : 0);
       const cProb = (k) =>
@@ -3386,6 +3406,526 @@
         S.ag = i;
         agent();
       }
+      /* ===== Mercado libre: buscar equipos por mi cuenta, entrevistas y negociación ===== */
+      const SXLV = { f4: 2, f3: 3, f2: 4, fe: 4, f1: 5 },
+        SXR = {
+          f4: ["f4", "f3", "f2", "f1"],
+          f3: ["f3", "f2", "f1"],
+          f2: ["f2", "f1", "fe"],
+          fe: ["fe", "f1", "f2"],
+          f1: ["f1", "fe", "f2"],
+        },
+        SXW = { f1: 10, f2: 6, fe: 6, f3: 3, f4: 1 },
+        SXD = { f4: 1.5, f3: 8, f2: 22, fe: 22, f1: 45 };
+      let SXI = null,
+        SXC = "";
+      const sxS = () =>
+          S.sx && S.sx.s === S.season ? S.sx : (S.sx = { s: S.season, t: {} }),
+        sxKey = (T) => T.se + ":" + (T.f4 || "") + ":" + T.n,
+        sxIsF4x = (k) => k.indexOf("f4:") === 0,
+        sxLab = (k) =>
+          sxIsF4x(k) ? F4D.find((x) => x.id === k.slice(3)).n : SERIES[k].n,
+        sxCol = (k) =>
+          sxIsF4x(k) ? F4D.find((x) => x.id === k.slice(3)).col : SERIES[k].col,
+        sxCap = (se) => Math.max(5, Math.round(SERIES[se].pay * 0.8));
+      
+      /* Palmarés: pesa más una F1 que una F4; entre las F4, pesa el prestigio del campeonato */
+      function sxPal() {
+        let p = 0;
+        (S.hist || []).forEach((h) => {
+          let w = SXW[h.s] || 1;
+          if (h.s === "f4") {
+            const c = F4D.find((x) => x.id === h.f4);
+            w = 0.4 + 0.12 * (c ? c.rel : 5);
+          }
+          const r = h.rank;
+          p += w * (r === 1 ? 5 : r <= 3 ? 2.5 : r <= 5 ? 1.2 : r <= 10 ? 0.5 : 0.1);
+          if (h.cr === 1) p += w * 1.5;
+        });
+        return Math.round(p * 10) / 10;
+      }
+      function sxFinInfo(T) {
+        if (T.bud == null) return { r: 1, need: 0.1, l: "Finanzas estables" };
+        const hb = SERIES[T.se].tb * (0.5 + T.car / 100),
+          r = T.bud / hb;
+        return {
+          r,
+          need: cl(1 - r, 0, 1.5),
+          l:
+            r < 0
+              ? "En deuda"
+              : r < 0.55
+                ? "Con problemas de dinero"
+                : r < 1.15
+                  ? "Finanzas estables"
+                  : "Muy buenas finanzas",
+        };
+      }
+      function sxMk(T) {
+        const X = SERIES[T.se],
+          a = AG();
+        T.tier = T.N > 1 ? 1 - T.idx / (T.N - 1) : 0.5;
+        T.fin = sxFinInfo(T);
+        T.need = T.fin.need;
+        T.gap = Math.max(0, SXLV[T.se] - SXLV[S.series]);
+        if (T.f4 && T.f4 !== S.f4id) T.gap = Math.max(0, (T.rel - F4.cur.rel) * 0.25);
+        T.merit = cl(
+          0.95 - (T.car - fit()) * 0.03 - (DIF - 1) * 0.14 + (DIF > 1 ? 0.06 : 0),
+          0.04,
+          0.95,
+        );
+        T.pal = sxPal();
+        T.palR = cl(T.pal / (SXD[T.se] * (0.45 + 0.9 * T.tier)), 0, 1.5);
+        const u = Math.max(1, X.pay / 10);
+        T.base = {
+          sal: Math.max(
+            1,
+            Math.round(
+              u * (0.35 + T.tier * T.tier * 3.4) * (1 + S.rep / 250) * (1 + a.sal) * DFM(),
+            ),
+          ),
+          bn: Math.max(1, Math.round(u * (0.3 + T.tier * 0.9))),
+          wb: Math.max(1, Math.round(u * (0.5 + T.tier * 1.4))),
+          pay: Math.max(3, Math.round(X.pay * (0.3 + 0.5 * T.tier))),
+        };
+        T.ePods = 1 + 5 * T.tier;
+        T.eWins = 3 * T.tier * T.tier;
+        return T;
+      }
+      function sxTeams(k) {
+        let rows,
+          se,
+          f4 = null,
+          rel = 0;
+        if (sxIsF4x(k)) {
+          f4 = k.slice(3);
+          const c = F4D.find((x) => x.id === f4);
+          se = "f4";
+          rel = c.rel;
+          rows = c.tm.map((t) => ({ n: t[0], car: t[1], bud: null }));
+        } else {
+          se = k;
+          rows = SERIES[k].teams.map((t) => ({ n: t[0], car: t[1], bud: t[2] }));
+          if (k === "f4") {
+            f4 = S.f4id;
+            rel = F4.cur.rel;
+          }
+        }
+        rows.sort((a, b) => b.car - a.car);
+        return rows
+          .map((r, i) => sxMk(Object.assign(r, { se, f4, rel, idx: i, N: rows.length })))
+          .filter(
+            (T) =>
+              !(T.se === S.series && T.n === S.team && (T.se !== "f4" || T.f4 === S.f4id)),
+          );
+      }
+      /* ¿El equipo acepta recibirte? Más top = más difícil. Reputación, palmarés,
+         categoría y representante cuentan. */
+      function sxChance(T) {
+        const p =
+          0.78 -
+          T.tier * 0.42 +
+          (T.merit - 0.5) * 0.35 +
+          (S.rep - 50) * 0.006 +
+          (T.palR - 0.5) * 0.3 +
+          AG().neg * 0.8 +
+          (S.ag || 0) * 0.05 -
+          T.gap * 0.2 -
+          (DIF - 1) * 0.08;
+        return cl(p, 0.03, 0.95);
+      }
+      const sxPalLbl = (T) =>
+        T.palR < 0.35 ? "corto" : T.palR < 0.8 ? "aceptable" : "amplio";
+      
+      function selfSearch(k) {
+        const cats = SXR[S.series].slice();
+        if (S.series === "f4")
+          cats.splice(
+            1,
+            0,
+            ...F4D.filter((c) => c.rel > F4.cur.rel)
+              .sort((a, b) => a.rel - b.rel)
+              .map((c) => "f4:" + c.id),
+          );
+        k = k && cats.includes(k) ? k : SXC && cats.includes(SXC) ? SXC : cats[0];
+        SXC = k;
+        SXI = null;
+        const L = sxTeams(k),
+          st = sxS(),
+          pal = sxPal(),
+          cat = sxIsF4x(k) ? "f4" : k,
+          lvGap = SXLV[cat] - SXLV[S.series],
+          tabs = cats
+            .map(
+              (c) =>
+                `<button class="lk${c === k ? " on" : ""}" style="margin:0 6px 6px 0;--c:${sxCol(c)}" onclick="selfSearch('${c}')">${sxLab(c).replace("Fórmula ", "F")}</button>`,
+            )
+            .join("");
+        window._sxL = L;
+        const note =
+          lvGap > 0
+            ? `<div class="pn"><b>Estás ${lvGap} ${lvGap > 1 ? "niveles" : "nivel"} por debajo.</b> Cuanto más abajo estés, menos te sirve el dinero para comprar un asiento arriba. Lo recomendable es subir por mérito propio.</div>`
+            : sxIsF4x(k)
+              ? `<div class="pn"><b>Campeonato con más prestigio.</b> Los equipos de ${sxLab(k)} miran con lupa a quien viene de una F4 menor.</div>`
+              : "";
+        $("#app").innerHTML = `${card()}<h2>Buscar equipos por mi cuenta</h2><p class="mu">Vos elegís a qué puertas golpear. Cada equipo decide si te recibe; cuanto más top, más difícil. Si te recibe, tendrás una entrevista y negociarás sueldo, bonus o cuánto pagás por el asiento.</p>
+      <div class="pn"><b>Tu perfil</b><br><span class="mu">Reputación ${S.rep} · Palmarés ${pal} pts · Representante: ${AGN[S.ag || 0]} · Fondos €${S.cash} M</span></div>
+      <div style="margin-top:10px">${tabs}</div>${note}
+      ${
+          L.length
+            ? L.map((T, i) => {
+                const s = st.t[sxKey(T)],
+                  p = sxChance(T);
+                return `<button class="cb of" ${s ? "disabled style='opacity:.45'" : ""} onclick="sxOpen(${i})">${badge(T.n)}<span><b>${T.n}</b> <span class="mu">· auto ${T.car}</span><br><span class="mu">${s === "no" ? "No quiso recibirte" : s ? "Ya hablaste con ellos este año" : "Entrevista: " + pl(p) + " (" + Math.round(p * 100) + "%)"} · ${T.fin.l}</span></span></button>`;
+              }).join("")
+            : '<p class="mu">No hay equipos para mostrar acá.</p>'
+        }<button class="go" onclick="back()">Volver a las ofertas</button>`;
+        window.scrollTo(0, 0);
+      }
+      function sxOpen(i) {
+        const T = window._sxL[i],
+          st = sxS(),
+          key = sxKey(T);
+        if (!T || st.t[key]) return;
+        st.t[key] = Math.random() < sxChance(T) ? "done" : "no";
+        if (st.t[key] === "no") {
+          const why =
+            T.gap > 0
+              ? "No te ven listo todavía para dar ese salto de categoría."
+              : S.rep < 35
+                ? "Tu reputación no los termina de convencer."
+                : T.tier > 0.6
+                  ? "Tienen la grilla cubierta con candidatos de más palmarés."
+                  : "Ya avanzaron con otros candidatos.";
+          $("#app").innerHTML = `<div class="pn"><div class="tn">${badge(T.n)}<span><b>${T.n}</b> no aceptó recibirte.</span></div><p>${why}</p><p class="mu">Podés insistir con otros equipos. Un buen año, más reputación o un mejor representante te abren más puertas.</p></div><button class="go" onclick="selfSearch()">Volver a la lista</button>`;
+          return window.scrollTo(0, 0);
+        }
+        SXI = {
+          T,
+          qs: sxPick(T),
+          n: 0,
+          imp: 0,
+          react: "",
+          pat: 3,
+          o: null,
+          msg: "",
+          noise: R(-4, 4) / 100,
+        };
+        SXI.ord = SXI.qs.map((q) => q.o.map((x, j) => j).sort(() => Math.random() - 0.5));
+        sxAsk();
+      }
+      
+      /* ---- Entrevista en la oficina ---- */
+      const SXQ = [
+        {
+          q: (T) => `¿Por qué querés correr en ${T.n}?`,
+          o: [
+            ["Porque tienen un proyecto sólido y quiero crecer con ustedes.", 1.5],
+            ["Quiero ganar, y ustedes tienen el auto para hacerlo.", (T) => (T.tier >= 0.5 ? 1 : -0.5)],
+            ["Es la oferta que apareció, nada más.", -1.5],
+          ],
+        },
+        {
+          q: () => "Tuviste un fin de semana malo. ¿Cómo reaccionás?",
+          o: [
+            ["Analizo los datos con los ingenieros y corrijo.", 1.5, "craft", 55],
+            ["Me encierro a entrenar hasta resolverlo.", 0.5],
+            ["Suelo culpar al auto, la verdad.", -2],
+          ],
+        },
+        {
+          q: () => "¿Cómo te llevás con tu compañero de equipo?",
+          o: [
+            ["Compartir datos nos hace mejores a los dos.", 1.5],
+            ["Es un rival más: no le regalo nada.", 0],
+            ["Prefiero no hablar con él.", -1.5],
+          ],
+        },
+        {
+          q: () => "¿Qué podés aportar fuera de la pista?",
+          o: [
+            ["Tengo patrocinadores y puedo acercarlos al equipo.", 2, "rep", 45],
+            ["Trabajo con la prensa y con los fans.", 1],
+            ["Nada, yo solo manejo.", -1],
+          ],
+        },
+        {
+          q: () => {
+            const h = S.hist[S.hist.length - 1];
+            return h ? `Tu última temporada terminó en P${h.rank}. ¿Qué pasó?` : "Contanos cómo fue tu última temporada.";
+          },
+          o: [
+            ["Faltó consistencia, y ya trabajé en eso.", 1.5, "cons", 50],
+            ["Me ayudó poco el equipo.", -1.5],
+            ["Fue un buen año, pero puedo dar más.", 0.5],
+          ],
+        },
+        {
+          q: () => "¿Dónde te ves en tres años?",
+          o: [
+            ["Ganando títulos con este equipo.", 1, "rep", 55],
+            ["Subiendo a una categoría mayor.", (T) => (T.tier > 0.5 ? 0.5 : -0.5)],
+            ["No lo sé todavía.", -1.5],
+          ],
+        },
+        {
+          q: () => "¿Cómo manejás la presión de la prensa?",
+          o: [
+            ["Con calma: hablo claro y vuelvo a lo mío.", 1.5, "cons", 50],
+            ["Prefiero evitarla.", 0],
+            ["Me afecta, no te voy a mentir.", -1],
+          ],
+        },
+        {
+          q: () => "¿Aceptarías pasar horas en el simulador de fábrica?",
+          o: [
+            ["Claro, el trabajo de fábrica es parte del oficio.", 1.5],
+            ["Solo si me pagan un extra.", -0.5],
+            ["No es lo mío.", -2],
+          ],
+        },
+        {
+          when: (T) => T.need > 0.35,
+          q: (T) => `${T.n} atraviesa problemas de presupuesto. ¿Cuál es tu postura?`,
+          o: [
+            ["Lo entiendo y puedo ser flexible con el contrato.", 1.5],
+            ["Podría ayudar a conseguir patrocinio.", 1, "rep", 40],
+            ["Eso no es mi problema.", -1.5],
+          ],
+        },
+      ];
+      function sxPick(T) {
+        const last = SXQ[SXQ.length - 1],
+          out = [SXQ[0]],
+          pool = SXQ.slice(1, -1);
+        if (last.when(T)) out.push(last);
+        while (out.length < 3) out.push(pool.splice(R(0, pool.length - 1), 1)[0]);
+        return out;
+      }
+      const sxDelta = (o, T) => {
+        let d = typeof o[1] === "function" ? o[1](T) : o[1];
+        if (o[2] && S[o[2]] < o[3]) d = Math.min(d, -1);
+        return d;
+      };
+      const sxOffice = (T) => {
+        const c = tcol(T.n);
+        return `<svg class="sx-off" viewBox="0 0 320 96" role="img" aria-label="Oficina de ${T.n}"><rect width="320" height="96" rx="12" fill="${c}" opacity=".13"/><rect x="18" y="14" width="86" height="52" rx="4" fill="none" stroke="${c}" stroke-width="2" opacity=".7"/><path d="M61 14v52M18 40h86" stroke="${c}" stroke-width="2" opacity=".5"/><rect x="0" y="78" width="320" height="18" fill="${c}" opacity=".18"/><rect x="150" y="52" width="150" height="9" rx="2" fill="${c}" opacity=".85"/><rect x="164" y="61" width="6" height="24" fill="${c}" opacity=".6"/><rect x="280" y="61" width="6" height="24" fill="${c}" opacity=".6"/><rect x="196" y="34" width="34" height="18" rx="2" fill="${c}" opacity=".35"/><rect x="209" y="52" width="8" height="4" fill="${c}" opacity=".35"/><circle cx="258" cy="40" r="7" fill="${c}" opacity=".55"/><rect x="123" y="48" width="18" height="30" rx="5" fill="${c}" opacity=".5"/></svg>`;
+      };
+      function sxAsk() {
+        const I = SXI,
+          T = I.T;
+        if (I.n >= I.qs.length) return sxTable("", 1);
+        const q = I.qs[I.n];
+        $("#app").innerHTML = `${sxOffice(T)}<div class="tn">${badge(T.n)}<span><b>Entrevista en ${T.n}</b><br><span class="mu">Pregunta ${I.n + 1} de ${I.qs.length} · te recibe el director deportivo</span></span></div>${I.react ? `<div class="pn mu">${I.react}</div>` : ""}<p class="sx-q">“${q.q(T)}”</p>${I.ord[I.n].map((j) => `<button class="cb" onclick="sxAns(${j})">${q.o[j][0]}</button>`).join("")}<button class="lk" style="margin-left:0" onclick="sxLeave()">Retirarme de la entrevista</button>`;
+        window.scrollTo(0, 0);
+      }
+      function sxAns(j) {
+        const I = SXI,
+          d = sxDelta(I.qs[I.n].o[j], I.T);
+        I.imp += d + R(-4, 4) / 10;
+        I.react =
+          d >= 1.5
+            ? "Se nota que la respuesta les gustó."
+            : d > 0
+              ? "El director asiente y anota algo."
+              : d === 0
+                ? "El director no muestra ninguna reacción."
+                : "El director frunce el ceño.";
+        I.n++;
+        sxAsk();
+      }
+      function sxLeave() {
+        SXI = null;
+        selfSearch();
+      }
+      
+      /* ---- Mesa de negociación: oferta y contraoferta ---- */
+      const sxImp = () =>
+          SXI.imp >= 3.5 ? "Excelente" : SXI.imp >= 1.5 ? "Buena" : SXI.imp >= -0.5 ? "Correcta" : "Floja",
+        sxQ = () =>
+          cl(
+            (SXI.T.merit - 0.5) * 1.1 +
+              (SXI.T.palR - 0.5) * 0.35 +
+              SXI.imp * 0.05 +
+              (S.rep - 50) * 0.004 +
+              (S.ag || 0) * 0.02,
+            -0.6,
+            0.6,
+          ),
+        sxReq = (T) => 0.25 * T.tier - 0.12,
+        sxMax = () => Math.max(0, S.cash + sxCap(SXI.T.se));
+      function sxMargin(o) {
+        const T = SXI.T,
+          B = T.base,
+          q = sxQ(),
+          pay = o.mode === "pay",
+          cost =
+            ((pay ? 0 : o.sal) +
+              (pay ? B.bn : o.bn) * T.ePods +
+              (pay ? B.wb : o.wb) * T.eWins) *
+            (1 + T.need * 0.5),
+          baseCost = B.sal + B.bn * T.ePods + B.wb * T.eWins,
+          eff = cl(1 - 0.3 * T.gap, 0.25, 1),
+          value =
+            baseCost * (1 + 1.2 * q) +
+            (pay ? o.pay * (0.6 + 1.2 * T.need) * eff : 0);
+        return (value - cost) / baseCost;
+      }
+      function sxCounter(o) {
+        const T = SXI.T,
+          B = T.base,
+          req = sxReq(T) + 0.02 - SXI.noise,
+          c = { mode: o.mode, sal: o.sal, bn: o.bn, wb: o.wb, pay: o.pay },
+          step = Math.max(1, Math.round(B.sal / 8)),
+          ps = Math.max(1, Math.round(B.pay / 10)),
+          ok = () => sxMargin(c) >= req;
+        let g = 0;
+        if (c.mode === "sal") {
+          const fl = Math.max(1, Math.round(B.sal * 0.3));
+          while (!ok() && c.sal > fl && g++ < 80) c.sal = Math.max(fl, c.sal - step);
+          while (!ok() && c.bn > 1 && g++ < 160) c.bn--;
+          while (!ok() && c.wb > 1 && g++ < 240) c.wb--;
+          if (!ok()) {
+            c.mode = "pay";
+            c.sal = 0;
+            c.pay = 0;
+          }
+        }
+        if (c.mode === "pay") while (!ok() && g++ < 600) c.pay += ps;
+        return c;
+      }
+      const sxStep = (k) => {
+        const B = SXI.T.base;
+        return {
+          sal: Math.max(1, Math.round(B.sal / 8)),
+          bn: Math.max(1, Math.round(B.bn / 5)),
+          wb: Math.max(1, Math.round(B.wb / 5)),
+          pay: Math.max(1, Math.round(B.pay / 10)),
+        }[k];
+      };
+      function sxAdj(k, d) {
+        const o = SXI.o,
+          s = sxStep(k);
+        o[k] = cl(o[k] + d * s, k === "sal" || k === "pay" ? 0 : 1, k === "pay" ? sxMax() : 999);
+        SXI.counter = null;
+        SXI.msg = "";
+        sxTable(SXI.msg, 0);
+      }
+      function sxMode(m) {
+        SXI.o.mode = m;
+        if (m === "pay" && !SXI.o.pay) SXI.o.pay = Math.min(SXI.T.base.pay, sxMax());
+        SXI.counter = null;
+        SXI.msg = "";
+        sxTable("", 0);
+      }
+      function sxTable(msg, top) {
+        const I = SXI,
+          T = I.T,
+          B = T.base;
+        if (!I.o) I.o = { mode: "sal", sal: B.sal, bn: B.bn, wb: B.wb, pay: 0 };
+        const o = I.o,
+          pay = o.mode === "pay",
+          row = (k, lab, ref) =>
+            `<div class="sx-row"><div><b>${lab}</b><br><span class="mu">Mercado: €${ref} M</span></div><div class="sx-st"><button onclick="sxAdj('${k}',-1)" aria-label="Menos">−</button><b>€${o[k]} M</b><button onclick="sxAdj('${k}',1)" aria-label="Más">+</button></div></div>`,
+          over = pay && o.pay > S.cash,
+          pats = "●".repeat(I.pat) + "○".repeat(3 - I.pat),
+          cn = I.counter;
+        $("#app").innerHTML = `${sxOffice(T)}<div class="tn">${badge(T.n)}<span><b>Negociación con ${T.n}</b><br><span class="mu">${SERIES[T.se].n.replace("Fórmula ", "F")} · auto ${T.car} · ${T.fin.l}</span></span></div>
+      <p class="mu">Impresión de la entrevista: <b>${sxImp()}</b> · Tu palmarés para esta categoría: <b>${sxPalLbl(T)}</b> · Paciencia del equipo: <span class="sx-pat">${pats}</span></p>${T.need > 0.35 ? `<p class="mu">Están justos de dinero: les cuesta pagar sueldos, pero valoran más un aporte.</p>` : ""}
+      ${msg || I.msg ? `<div class="pn">${msg || I.msg}</div>` : ""}
+      <div style="margin:10px 0"><button class="lk ${pay ? "" : "on"}" style="--c:var(--sc);margin:0 6px 6px 0" onclick="sxMode('sal')">Cobrar sueldo</button><button class="lk ${pay ? "on" : ""}" style="--c:var(--sc);margin:0 6px 6px 0" onclick="sxMode('pay')">Pagar por el asiento</button></div>
+      ${
+          pay
+            ? `${row("pay", "Aporte por el asiento", B.pay)}<p class="mu">Sin sueldo; bonus fijos de €${B.bn} M por podio y €${B.wb} M por victoria. El aporte va al presupuesto del equipo. Tus fondos: €${S.cash} M${over ? ` · <span class="sx-neg">te endeudás €${o.pay - Math.max(0, S.cash)} M (interés del 10 % anual)</span>` : ` · podés endeudarte hasta €${sxCap(T.se)} M`}. Pagar puede costarte reputación: te ven como piloto de pago en vez de uno que sube por mérito.</p>`
+            : `${row("sal", "Sueldo por temporada", B.sal)}${row("bn", "Bonus por podio", B.bn)}${row("wb", "Bonus por victoria", B.wb)}`
+        }
+      <button class="go" ${over && o.pay > sxMax() ? "disabled" : ""} onclick="sxOffer()">Hacer esta oferta</button>
+      ${cn ? `<button class="cb" ${cn.mode === "pay" && cn.pay > sxMax() ? "disabled style='opacity:.45'" : ""} onclick="sxDeal(SXI.counter)"><b>Aceptar la contraoferta</b><br><span class="mu">${sxSum(cn)}</span></button>` : ""}
+      <button class="lk" style="margin-left:0" onclick="sxLeave()">Levantarme de la mesa</button>`;
+        if (top) window.scrollTo(0, 0);
+      }
+      const sxSum = (d) =>
+        d.mode === "pay"
+          ? `Pagás €${d.pay} M por el asiento · bonus fijos`
+          : `Sueldo €${d.sal} M · podio €${d.bn} M · victoria €${d.wb} M`;
+      function sxOffer() {
+        const I = SXI,
+          T = I.T,
+          o = I.o,
+          m = sxMargin(o) + I.noise,
+          req = sxReq(T);
+        if (m >= req) return sxDeal(Object.assign({}, o));
+        const far = req - m > 0.7;
+        I.pat -= far ? 2 : 1;
+        if (I.pat < 0) I.pat = 0;
+        if (far) {
+          I.counter = null;
+          I.msg = "Se miran entre ellos: tu pedido está muy lejos de lo que pueden ofrecer.";
+        } else {
+          I.counter = sxCounter(o);
+          I.msg = `No cierran con tu oferta, pero contraofertan: ${sxSum(I.counter)}.`;
+          I.o = Object.assign({}, I.counter);
+        }
+        if (I.pat <= 0) {
+          if (I.counter)
+            I.msg += " Es su última oferta: la tomás o la dejás.";
+          else {
+            sxS().t[sxKey(T)] = "no";
+            SXI = null;
+            $("#app").innerHTML = `<div class="pn"><b>${T.n} dio por terminada la reunión.</b><p class="mu">Se les agotó la paciencia. Todavía podés probar con otros equipos.</p></div><button class="go" onclick="selfSearch()">Volver a la lista</button>`;
+            return window.scrollTo(0, 0);
+          }
+        }
+        sxTable("", 1);
+      }
+      function sxDeal(d) {
+        const I = SXI,
+          T = I.T,
+          pay = d.mode === "pay",
+          debt = pay ? Math.max(0, d.pay - Math.max(0, S.cash)) : 0;
+        I.deal = d;
+        $("#app").innerHTML = `${sxOffice(T)}<div class="pn"><div class="tn">${badge(T.n)}<span><b>¡Hay acuerdo con ${T.n}!</b></span></div><p>${sxSum(d)}.</p>${debt ? `<p class="sx-neg">Vas a quedar con €${debt} M de deuda. Los intereses y tu reputación van a sentirlo.</p>` : ""}${pay ? `<p class="mu">Tu aporte entra al presupuesto del equipo. Hay chances de que la prensa te critique por pagar en vez de ganarte el asiento.</p>` : ""}<p class="mu">Falta ajustar la duración en el contrato final.</p></div><button class="go" onclick="sxSign()">Firmar y ver el contrato</button><button class="lk" style="margin-left:0" onclick="sxLeave()">No firmar</button>`;
+        window.scrollTo(0, 0);
+      }
+      function sxSign() {
+        const I = SXI,
+          T = I.T,
+          d = I.deal,
+          pay = d.mode === "pay";
+        let note = "";
+        if (pay) {
+          if (d.pay > sxMax()) return sxTable("No te alcanza ni endeudándote.", 1);
+          S.cash -= d.pay;
+          const tm = SERIES[T.se].teams.find((t) => t[0] === T.n);
+          if (tm && T.bud != null) tm[2] += d.pay;
+          const pr = cl(
+            0.35 +
+              (T.gap > 0 ? 0.25 : 0) +
+              (T.merit > 0.6 ? 0.15 : 0) -
+              T.need * 0.15 +
+              (d.pay >= T.base.pay ? 0.1 : 0),
+            0.15,
+            0.9,
+          );
+          if (Math.random() < pr) {
+            const l = 2 + (T.tier > 0.5 ? 1 : 0) + (T.merit > 0.6 ? 1 : 0);
+            S.rep = cl(S.rep - l);
+            note = ` La prensa criticó que pagaras por el asiento: −${l} de reputación.`;
+          } else note = " Pagar por el asiento pasó casi desapercibido.";
+        }
+        window._o = [{ se: T.se, n: T.n, c: T.car, f4: T.f4 }];
+        window._pay = pay ? 1 : 0;
+        window._ncOv = {
+          sal: pay ? 0 : d.sal,
+          bn: pay ? T.base.bn : d.bn,
+          wb: pay ? T.base.wb : d.wb,
+          pay,
+          note,
+        };
+        SXI = null;
+        take(0);
+      }
+      
       function market(k) {
         k = k || S.series;
         const X = SERIES[k],
@@ -3409,7 +3949,7 @@
                   : (L[t[0]] || []).map(
                       (n) => n + ` <span class="mu">(${ageOf(n, k)})</span>`,
                     );
-              return `<tr class="${mine ? "me" : ""}"><td><span class="tn">${badge(t[0], 1)}${t[0]}</span></td><td>${ds.join(", ")}</td><td>${t[1]}</td><td>€${t[2]} M</td></tr>`;
+              return `<tr class="${mine ? "me" : ""}"><td><span class="tn">${badge(t[0], 1)}${t[0]}</span></td><td>${ds.join(", ")}</td><td>${t[1]}</td><td>€${t[2]} M${t[2] < 0 ? " ⚠" : ""}</td></tr>`;
             })
             .join(
               "",
@@ -6150,6 +6690,7 @@ ${hh ? `<h3>Campeones anteriores</h3><div class="tw"><table><tr><th>Año</th><th
         LGX = (h) => h;
       /* ===== NOVEDADES (changelog): para agregar una versión, sumá un objeto ARRIBA de CHANGELOG ===== */
       const CHANGELOG = [
+{v:"1.35",d:"23/11/2026",es:["Nuevo: «Buscar equipos por mi cuenta» en la pantalla de ofertas. Elegís a qué equipos golpear la puerta, de tu categoría o de otras (desde F4 también ves las F4 regionales de más prestigio). Cada equipo decide si te recibe: cuanto más top, más difícil, y también pesan tu reputación, tu palmarés y el nivel de tu representante.","Palmarés: una F1 vale mucho más que una F4, y entre las F4 cuenta el prestigio del campeonato. Cuanto más abajo estés en la escalera, menos te sirve el dinero para comprar un asiento en una categoría alta; lo recomendable es subir por mérito propio.","Entrevista en la oficina del equipo: 3 preguntas con tres respuestas cada una. Lo que respondas (y tus stats) define la impresión que dejás.","Negociación con oferta y contraoferta: pedís sueldo y bonus por podio y victoria, o elegís pagar por el asiento. El equipo acepta, contraoferta o se levanta de la mesa. Los equipos con problemas de dinero aceptan más fácil a quien paga y pagan peor los sueldos.","Pagar por un asiento puede bajarte la reputación, sobre todo si el equipo es top, si apuntás más arriba de donde estás o si tenías mérito para entrar sin pagar.","Economía negativa: podés endeudarte para pagar un asiento (con interés del 10 % anual y costo de reputación), y los equipos pueden entrar en crisis y quedar con presupuesto negativo, marcado con ⚠ en el Mercado. Un equipo en deuda no desarrolla el auto."],pt:["Novo: «Procurar equipes por conta própria» na tela de ofertas. Você escolhe a quais equipes bater na porta, da sua categoria ou de outras (a partir da F4 você também vê as F4 regionais de mais prestígio). Cada equipe decide se te recebe: quanto mais top, mais difícil, e também pesam sua reputação, seu histórico de títulos e o nível do seu agente.","Histórico de títulos: uma F1 vale muito mais que uma F4, e entre as F4 conta o prestígio do campeonato. Quanto mais abaixo você estiver na escada, menos o dinheiro serve para comprar um assento numa categoria alta; o recomendável é subir por mérito próprio.","Entrevista no escritório da equipe: 3 perguntas com três respostas cada uma. O que você responde (e seus atributos) define a impressão que você deixa.","Negociação com oferta e contraoferta: você pede salário e bônus por pódio e vitória, ou escolhe pagar pelo assento. A equipe aceita, faz contraoferta ou se levanta da mesa. Equipes com problemas de dinheiro aceitam mais fácil quem paga e pagam pior os salários.","Pagar por um assento pode diminuir sua reputação, principalmente se a equipe é top, se você mira mais alto do que está ou se tinha mérito para entrar sem pagar.","Economia negativa: você pode se endividar para pagar um assento (com juros de 10 % ao ano e custo de reputação), e as equipes podem entrar em crise e ficar com orçamento negativo, marcado com ⚠ no Mercado. Uma equipe endividada não desenvolve o carro."],en:["New: «Look for teams on my own» on the offers screen. You choose which teams to knock on, in your category or others (from F4 you also see the more prestigious regional F4s). Each team decides whether to meet you: the bigger the team, the harder it is, and your reputation, track record and agent level also count.","Track record: an F1 result is worth far more than an F4 one, and among F4s the championship's prestige counts. The further down the ladder you are, the less money helps you buy a seat in a high category; the recommended path is to move up on merit.","Interview in the team's office: 3 questions with three answers each. Your answers (and your stats) decide the impression you leave.","Negotiation with offers and counteroffers: ask for a salary plus podium and win bonuses, or choose to pay for the seat. The team accepts, counters or walks away. Teams short on cash accept paying drivers more easily and pay worse salaries.","Paying for a seat can cost you reputation, especially if the team is a top one, if you aim above your current level or if you had the merit to get in without paying.","Negative economy: you can go into debt to pay for a seat (10 % yearly interest and a reputation cost), and teams can fall into crisis and end up with a negative budget, marked with ⚠ in the Market. A team in debt cannot develop its car."]},
 {v:"1.34",d:"23/11/2026",es:["Casino: se quitó la elección de dificultad (Fácil, Normal y Realista). Ahora hay un único modo, el que antes era Realista: la ruleta paga 35 a 1 sin La Partage, el blackjack paga 6 a 5 y el crupier pide con 17 blando, y la apuesta máxima es de 50 M.","Vitrina: trofeos rediseñados, con copas metálicas para los campeones de pilotos y escudos con laurel para los de constructores."],pt:["Cassino: foi removida a escolha de dificuldade (Fácil, Normal e Realista). Agora há um único modo, o que antes era o Realista: a roleta paga 35 para 1 sem La Partage, o blackjack paga 6 para 5 e o crupiê pede carta no 17 soft, e a aposta máxima é de 50 M.","Vitrine: troféus redesenhados, com taças metálicas para os campeões de pilotos e escudos com louros para os de construtores."],en:["Casino: the difficulty choice (Easy, Normal and Realistic) was removed. There is now a single mode, the former Realistic one: roulette pays 35 to 1 without La Partage, blackjack pays 6 to 5 and the dealer hits soft 17, and the maximum bet is 50 M.","Showcase: redesigned trophies, with metallic cups for driver champions and laurel shields for constructors."]},
 {v:"1.33",d:"23/11/2026",es:["Casino: corregido el póker Texas Hold'em, ahora ves tus dos cartas boca arriba durante toda la mano (antes quedaban boca abajo hasta el final).","Casino: el blackjack ahora permite deshacer la apuesta ficha por ficha. Además tiene Limpiar, Repetir la apuesta anterior y Mínima, y el botón Repartir se bloquea si no hay fichas.","Casino: nueva dificultad (Fácil, Normal y Realista) que se elige arriba y por defecto sigue la dificultad de tu carrera. Fácil: la ruleta paga 36 a 1 al pleno y devuelve la mitad de las apuestas simples si sale 0, el zapato se baraja a la mitad y los rivales de póker cometen más errores. Normal: ruleta europea estándar, blackjack 3 a 2 y rivales habituales. Realista: máximo de 50 M por apuesta, blackjack 6 a 5, el crupier pide con 17 blando, solo se dobla con 9, 10 u 11 y rivales expertos que farolean más y fallan menos.","Casino: el blackjack ahora baraja cuando queda el 25 % del zapato (antes llegaba casi al final), lo que dificulta contar cartas. Cada mesa muestra sus reglas debajo de la dificultad."],pt:["Cassino: corrigido o pôquer Texas Hold'em, agora você vê suas duas cartas viradas para cima durante toda a mão (antes ficavam viradas para baixo até o fim).","Cassino: o blackjack agora permite desfazer a aposta ficha por ficha. Também tem Limpar, Repetir a aposta anterior e Mínima, e o botão Distribuir fica bloqueado se não há fichas.","Cassino: nova dificuldade (Fácil, Normal e Realista) que se escolhe no topo e por padrão segue a dificuldade da sua carreira. Fácil: a roleta paga 36 para 1 no número e devolve metade das apostas simples se sair 0, o baralho é embaralhado na metade e os rivais de pôquer cometem mais erros. Normal: roleta europeia padrão, blackjack 3 para 2 e rivais habituais. Realista: máximo de 50 M por aposta, blackjack 6 para 5, o dealer pede com 17 mole, só se dobra com 9, 10 ou 11 e rivais experts que blefam mais e erram menos.","Cassino: o blackjack agora embaralha quando restam 25 % do sapato (antes ia quase até o fim), o que dificulta contar cartas. Cada mesa mostra suas regras abaixo da dificuldade."],en:["Casino: fixed Texas Hold'em poker, you now see your two cards face up for the whole hand (before they stayed face down until the end).","Casino: blackjack now lets you undo your bet chip by chip. It also has Clear, Repeat last bet and Minimum, and the Deal button is locked if there are no chips.","Casino: new difficulty (Easy, Normal and Realistic) chosen at the top, defaulting to your career difficulty. Easy: roulette pays 36 to 1 on a single number and returns half of even-money bets if 0 comes up, the shoe is shuffled at the halfway point and poker opponents make more mistakes. Normal: standard European roulette, 3 to 2 blackjack and regular opponents. Realistic: 50 M maximum bet, 6 to 5 blackjack, the dealer hits soft 17, doubling only on 9, 10 or 11, and expert opponents who bluff more and make fewer mistakes.","Casino: blackjack now shuffles when 25 % of the shoe is left (before it went almost to the end), which makes card counting harder. Each table shows its rules under the difficulty."]},
 {v:"1.32",d:"23/11/2026",es:["Nuevo: Casino. Entrás desde la pantalla de decisiones, debajo de todo, con el botón «Casino», y apostás tus fondos (dinero ficticio del juego).","Ruleta europea animada con rueda y bola, apuestas a pleno (35 a 1), docenas, columnas, rojo o negro, par o impar, y 1–18 o 19–36. Podés deshacer, limpiar y repetir la apuesta anterior.","Blackjack con 6 mazos: pedir, plantarse y doblar. El blackjack paga 3 a 2 y el crupier se planta en 17.","Póker Texas Hold'em contra dos jugadores de la casa, con tres mesas de distinta entrada, ciegas, subidas, all-in y botes laterales. Al levantarte cobrás las fichas que te queden.","Apuesta máxima de 100 M por casilla o mano, y un balance histórico de lo que ganaste o perdiste en el casino."],pt:["Novo: Cassino. Você entra pela tela de decisões, bem embaixo, no botão «Cassino», e aposta seus fundos (dinheiro fictício do jogo).","Roleta europeia animada com roda e bola, apostas em número (35 para 1), dúzias, colunas, vermelho ou preto, par ou ímpar, e 1–18 ou 19–36. Dá para desfazer, limpar e repetir a aposta anterior.","Blackjack com 6 baralhos: pedir, parar e dobrar. O blackjack paga 3 para 2 e o dealer para no 17.","Pôquer Texas Hold'em contra dois jogadores da casa, com três mesas de entradas diferentes, blinds, aumentos, all-in e potes laterais. Ao sair você recebe as fichas que sobraram.","Aposta máxima de 100 M por casa ou mão, e um saldo histórico do que você ganhou ou perdeu no cassino."],en:["New: Casino. Enter from the decisions screen, at the very bottom, with the «Casino» button, and bet your funds (in-game fictional money).","Animated European roulette with wheel and ball, straight-up bets (35 to 1), dozens, columns, red or black, odd or even, and 1–18 or 19–36. You can undo, clear and repeat your previous bet.","Blackjack with 6 decks: hit, stand and double down. Blackjack pays 3 to 2 and the dealer stands on 17.","Texas Hold'em poker against two house players, with three tables at different buy-ins, blinds, raises, all-ins and side pots. When you leave you cash out the chips you have left.","Maximum bet of 100 M per spot or hand, and a lifetime casino balance of what you won or lost."]},
@@ -9343,7 +9884,7 @@ function intro() {
       }
       function apply(e) {
         for (const k in e) {
-          if (k === "cash") S.cash = Math.max(0, S.cash + e[k]);
+          if (k === "cash") S.cash = S.cash < 0 ? S.cash + e[k] : Math.max(0, S.cash + e[k]);
           else if (k === "car") S.boost += e[k];
           else if (k === "pt") {
             S.pt = e[k] > 0 ? 1 : 0;
@@ -9660,7 +10201,7 @@ ${tRows}<button class="go" onclick="nextRound()">${SE.i >= N ? "Ver resumen de l
         S.pen = Math.max(0, S.pen - 2);
         const inc =
           (S.sal || 0) + (S.bn || 0) * pods + (S.wb || 0) * wins - AG().fee;
-        S.cash = Math.max(0, S.cash + inc);
+        S.cash = S.cash < 0 ? S.cash + inc : Math.max(0, S.cash + inc);
         if (inc)
           EX += `<div class="pn"><b>Contrato</b><br>Balance de sueldo, bonus y representante: ${inc > 0 ? "+" : ""}€${inc} M.</div>`;
         {
@@ -9705,6 +10246,12 @@ ${tRows}<button class="go" onclick="nextRound()">${SE.i >= N ? "Ver resumen de l
           EX += `<div class="pn"><b>Piloto de pago</b><br>Tu aporte económico ayudó al equipo esta temporada.</div>`;
         }
         S.cash += Math.round(X.pay * (0.6 + S.rep / 100) * (1 + tpv("inc")));
+        if (S.cash < 0) {
+          const it = Math.max(1, Math.ceil(-S.cash * 0.1));
+          S.cash -= it;
+          S.rep = cl(S.rep - 1);
+          EX += `<div class="pn"><b>Deuda</b><br>Estás en números rojos (€${S.cash} M). Los intereses del año te costaron €${it} M y tu reputación se resintió.</div>`;
+        }
         S.age++;
         S.year++;
         {
@@ -9910,7 +10457,7 @@ ${out
     return `<button class="cb of" onclick="take(${i})">${badge(o.n)}<span><b>${o.n}</b> <span class="mu">· ${o.f4 ? F4D.find((x) => x.id === o.f4).n : SERIES[o.se].n}</span><br><span class="mu">${o.tag} · auto ${o.c} (${t})</span></span></button>`;
   })
   .join("")}
-<button class="cb" onclick="payOffers()">Pagar por un asiento en un equipo chico</button><button class="cb" onclick="agent()">Representante: ${AGN[S.ag || 0]} (ver beneficios / cambiar)</button><button class="cb" onclick="retire()">Retirarme y ver mi legado</button>`);
+<button class="cb" onclick="selfSearch()">Buscar equipos por mi cuenta</button><button class="cb" onclick="payOffers()">Pagar por un asiento en un equipo chico</button><button class="cb" onclick="agent()">Representante: ${AGN[S.ag || 0]} (ver beneficios / cambiar)</button><button class="cb" onclick="retire()">Retirarme y ver mi legado</button>`);
       }
       function take(i) {
         const o = _o[i];
