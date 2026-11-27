@@ -35,7 +35,7 @@
     if (!U || busy || localStorage.getItem("pp_priv2") !== "yes") return; busy = true; btn.dataset.s = "1";
     try {
       const u = db.collection("users").doc(U.uid), b = db.batch();
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i <= 10; i++) {
         const raw = localStorage.getItem("pp_sv_" + i);
         if (raw) { const o = JSON.parse(raw); b.set(u.collection("saves").doc("s" + i), { t: o.t || 0, l: o.l || "", json: raw }); }
       }
@@ -73,7 +73,7 @@
     await pushAll();
   }
   function wipeLocal() {
-    for (let i = 0; i < 4; i++) localStorage.removeItem("pp_sv_" + i);
+    for (let i = 0; i <= 10; i++) localStorage.removeItem("pp_sv_" + i);
     KEYS.forEach((k) => localStorage.removeItem(k));
     try { TRO = []; } catch (e) {}
   }
